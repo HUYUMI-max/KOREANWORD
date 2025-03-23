@@ -7,7 +7,7 @@ import {
   ScrollBar,
 } from "@/components/ui/scroll-area"
 
-export default function Sidebar() {
+export default function Sidebar(){
   return (
     <div className="hidden border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:block md:w-[240px]">
       <ScrollArea className="h-full py-6">
@@ -36,12 +36,14 @@ export default function Sidebar() {
           </div>
         </div>
         <div className="px-4 py-2">
-          <h3 className="mb-2 text-sm font-semibold">マイ単語帳</h3>
+          <h3 className="mb-2 text-sm font-semibold">
+            マイ単語帳
+          </h3>
           <div className="space-y-1">
-            {/* カスタム単語帳がここに表示されます */}
+            {/* カスタム単語帳がここに表示される*/}
           </div>
         </div>
-        <ScrollBar />
+        <ScrollBar/>
       </ScrollArea>
     </div>
   )

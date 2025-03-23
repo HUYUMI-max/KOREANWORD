@@ -1,19 +1,19 @@
 "use client"
 
-import { Moon, Sun, HelpCircle, Settings } from "lucide-react"
-import { useTheme } from "next-themes"
-import { Button } from "@/components/ui/button"
-import {
+import { Moon, Sun, HelpCircle, Settings } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Button } from "@/components/ui/button";
+import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+ } from "@/components/ui/dropdown-menu";
 
-export default function Header() {
-  const { setTheme } = useTheme()
+ export default function Header(){
+  const {setTheme} = useTheme();
 
-  return (
+  return(
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         <div className="mr-4 flex">
@@ -51,5 +51,5 @@ export default function Header() {
         </div>
       </div>
     </header>
-  )
-}
+  );
+ }
