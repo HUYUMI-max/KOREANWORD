@@ -1,6 +1,6 @@
 "use client"
 
-import{useState} from "react"
+import{useEffect, useState} from "react"
 import{motion, AnimatePresence} from "framer-motion"
 import{ChevronLeft, ChevronRight} from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -10,28 +10,41 @@ interface Flashcard {
   id:string
   korean:string
   japanese: string
-  level: string
 }
 
-// サンプルデータ、あとでファイルを同期する
-const sampleCards: Flashcard[] = [
-  {id: "1", korean: "안녕하세요", japanese: "こんにちは", level: "TOPIK1"},
-  {id: "2", korean: "감사합니다", japanese: "ありがとうございます", level: "TOPIK1"},
-  {id: "3", korean: "사랑해요", japanese: "愛してます", level: "TOPIK1"},
-]
-
 export default function Home(){
+  const [cards, setCards] = useState<Flashcard[]>([])
   const [currentIndex,setCurrentIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
 
+  useEffect(() => {
+    fetch("/data/vocabulary1671.json")
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("読み込んだJSON:", data)
+
+        const beginnerCards: Flashcard[] = data["初心者"].map((item: any) => ({
+          id: String(item.id),
+          korean: item.korean,
+          japanese: item.japanese,
+        }))
+        console.log("整形後のcards:", beginnerCards)
+      // .then((data: Flashcard[]) => {
+        setCards(beginnerCards)
+      })
+      .catch((error) => {
+        console.error("JSON読み込みエラー", error)
+      })
+  }, [])
+
   const handleNext = () => {
     setIsFlipped(false)
-    setCurrentIndex((prev) => (prev + 1) % sampleCards.length)
+    setCurrentIndex((prev) => (prev + 1) % cards.length)
   }
 
   const handlePrevious = () => {
     setIsFlipped(false)
-    setCurrentIndex((prev) => (prev - 1 + sampleCards.length) % sampleCards.length)
+    setCurrentIndex((prev) => (prev - 1 + cards.length) % cards.length)
   }
 
   const handleFlip = () => {
@@ -46,10 +59,11 @@ export default function Home(){
           variant="outline"
           size="icon"
           onClick={handlePrevious}
-          disabled={sampleCards.length <= 1}
+          disabled={cards.length <= 1}
           >
             <ChevronLeft className="h-4 w-4"/>
           </Button>
+        {cards.length > 0 && (
           <AnimatePresence mode="wait">
             <motion.div
             key={currentIndex}
@@ -68,23 +82,24 @@ export default function Home(){
                 >
                 <div className="absolute w-full h-full flex items-center justify-center p-6 backface-hidden">
                   <h2 className="text-3xl font-bold text-center">
-                    {sampleCards[currentIndex].korean}
+                    {cards[currentIndex].korean}
                   </h2>
                 </div>
                 <div className="absolute w-full h-full flex items-center justify-center p-6 [transform:rotateY(180deg)] backface-hidden">
                   <h2 className="text-3xl font-bold text-center">
-                    {sampleCards[currentIndex].japanese}
+                    {cards[currentIndex].japanese}
                   </h2>
                 </div>
                 </motion.div>
               </Card>
             </motion.div>
           </AnimatePresence>
+          )}
           <Button
           variant="outline"
           size="icon"
           onClick={handleNext}
-          disabled={sampleCards.length <= 1}
+          disabled={cards.length <= 1}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
