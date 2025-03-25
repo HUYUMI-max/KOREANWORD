@@ -29,7 +29,6 @@ export default function Home(){
           japanese: item.japanese,
         }))
         console.log("整形後のcards:", beginnerCards)
-      // .then((data: Flashcard[]) => {
         setCards(beginnerCards)
       })
       .catch((error) => {

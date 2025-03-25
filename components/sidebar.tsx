@@ -27,11 +27,11 @@ export default function Sidebar(){
             </Button>
             <Button variant="ghost" className="w-full justify-start" onClick={() => {}}>
               <FolderOpen className="mr-2 h-4 w-4" />
-              TOPIK 3-4級 (中級)
+              TOPIK 3-5級 (中級)
             </Button>
             <Button variant="ghost" className="w-full justify-start" onClick={() => {}}>
               <FolderOpen className="mr-2 h-4 w-4" />
-              TOPIK 5-6級 (上級)
+              TOPIK 6級 (上級)
             </Button>
           </div>
         </div>
