@@ -7,7 +7,11 @@ import {
   ScrollBar,
 } from "@/components/ui/scroll-area"
 
-export default function Sidebar(){
+interface SidebarProps {
+  onSelectLevel: (level: "初心者" | "中級" | "上級") => void;
+}
+
+export default function Sidebar({onSelectLevel}: SidebarProps){
   return (
     <div className="hidden border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:block md:w-[240px]">
       <ScrollArea className="h-full py-6">
@@ -21,7 +25,12 @@ export default function Sidebar(){
         <div className="px-4 py-2">
           <h3 className="mb-2 text-sm font-semibold">レベル別単語帳</h3>
           <div className="space-y-1">
-            <Button variant="ghost" className="w-full justify-start" onClick={() => {}}>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start" 
+              onClick={() => {
+                console.log("クリックされた(初心者)")
+                onSelectLevel("初心者")}}>
               <FolderOpen className="mr-2 h-4 w-4" />
               TOPIK 1-2級 (初級)
             </Button>
