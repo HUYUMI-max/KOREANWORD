@@ -110,10 +110,10 @@
 //   )
 // }
 
+import AppShell from '@/components/AppShell';
+
 export default function Page() {
-  return (
-    <div>
-      <p>サイドバーから単語帳を選択してください</p>
-    </div>
-  )
+  return <AppShell />
+  
+
 }

@@ -29,7 +29,6 @@ export default function Sidebar({onSelectLevel}: SidebarProps){
               variant="ghost" 
               className="w-full justify-start" 
               onClick={() => {
-                console.log("クリックされた(初心者)")
                 onSelectLevel("初心者")}}>
               <FolderOpen className="mr-2 h-4 w-4" />
               TOPIK 1-2級 (初級)
