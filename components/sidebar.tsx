@@ -33,11 +33,19 @@ export default function Sidebar({onSelectLevel}: SidebarProps){
               <FolderOpen className="mr-2 h-4 w-4" />
               TOPIK 1-2級 (初級)
             </Button>
-            <Button variant="ghost" className="w-full justify-start" onClick={() => {}}>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start" 
+              onClick={() => {
+                onSelectLevel("中級")}}>
               <FolderOpen className="mr-2 h-4 w-4" />
               TOPIK 3-5級 (中級)
             </Button>
-            <Button variant="ghost" className="w-full justify-start" onClick={() => {}}>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start" 
+              onClick={() => {
+                onSelectLevel("上級")}}>
               <FolderOpen className="mr-2 h-4 w-4" />
               TOPIK 6級 (上級)
             </Button>

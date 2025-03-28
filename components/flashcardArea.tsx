@@ -22,7 +22,7 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
 
     console.log("クリックされた", level)
 
-    fetch("/data/vocabulary1671.json")
+    fetch("/data/VocabularyAll.json")
       .then((res) => res.json())
       .then((data) => {
         console.log("現在のレベル:", level)
