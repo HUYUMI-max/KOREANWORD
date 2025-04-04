@@ -6,6 +6,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import SearchBar from "./searchBar"
 import { Card } from "@/components/ui/card"
+import { Switch } from "@/components/ui/switch"
+
 
 interface Flashcard {
   id: string
@@ -19,6 +21,9 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState("")
+  // const [favorites, setFavorites] = useState<string[]>([])
+  // const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+
 
 
   const handleSearch = (keyword: string) => {
@@ -48,24 +53,21 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
       })
   }, [level])
 
-  useEffect(() => {
+  // useEffect(() => {
+  //   const baseResults = searchKeyword === ""
+  //     ? cards
+  //     : cards.filter((card) =>
+  //     (typeof card.korean === "string" && card.korean.includes(searchKeyword)) ||
+  //     (typeof card.japanese === "string" && card.japanese.includes(searchKeyword))
+  //   )
 
-    console.log(" 検索キーワード:", searchKeyword)
-    console.log(" フィルター対象のカード数:", cards.length)
-
-    const results = cards.filter((card) =>
-      (typeof card.korean === "string" && card.korean.includes(searchKeyword)) ||
-      (typeof card.japanese === "string" && card.japanese.includes(searchKeyword))
-    )
-
-      console.log(" フィルター結果の数:", results.length)
-    if (results.length > 0) {
-      console.log(" 最初のヒット:", results[0])
-  }
+    // const finalResults = showFavoritesOnly
+    // ? baseResults.filter(card => favorites.includes(card.id))
+    // : baseResults
   
-    setFilteredCards(results)
-    setCurrentIndex(0)
-  }, [searchKeyword])
+  //   setFilteredCards(finalResults)
+  //   setCurrentIndex(0)
+  // }, [searchKeyword, cards, favorites, showFavoritesOnly])
   
   
   
@@ -91,23 +93,38 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
     setIsFlipped(!isFlipped)
   }
 
+  // const toggleFavorite = () => {
+  //   if (!selectedCard) return
+  
+  //   setFavorites((prev) =>
+  //     prev.includes(selectedCard.id)
+  //       ? prev.filter((id) => id !== selectedCard.id) 
+  //       : [...prev, selectedCard.id] 
+  //   )
+  // }
+
   const safeIndex = Math.min(currentIndex, filteredCards.length - 1)
   const selectedCard = filteredCards[safeIndex]
-    if (!selectedCard) {
-    console.log("selectedCard がまだ undefined です。データ読み込み前の状態。")
-  } else {
-    console.log("表示中のカード:", {
-      currentIndex,
-      selectedCard,
-      total: cards.length
-    })
-  }
+  // const isFavorite = selectedCard ? favorites.includes(selectedCard.id) : false
+  //   if (!selectedCard) {
+  //   console.log("selectedCard がまだ undefined です。データ読み込み前の状態。")
+  // } else {
+  //   console.log("表示中のカード:", {
+  //     currentIndex,
+  //     selectedCard,
+  //     total: cards.length
+  //   })
+  // }
   
 
   return (
     <div className="container mx-auto px-4 py-8">
       <SearchBar onSearch={handleSearch} />
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        {/* <div className="flex items-center gap-2 mb-4">
+          <Switch checked={showFavoritesOnly} onCheckedChange={setShowFavoritesOnly} />
+          <span className="text-sm">お気に入りだけを表示</span>
+        </div> */}
         <div className="flex items-center gap-4 mb-8">
           <Button variant="outline" size="icon" onClick={handlePrevious} disabled={filteredCards.length <= 1}>
             <ChevronLeft className="h-4 w-4" />
@@ -122,20 +139,32 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
                 transition={{ duration: 0.3 }}
                 className="perspective-1000"
               >
-                <Card className="w-[300px] h-[200px] cursor-pointer bg-card" onClick={handleFlip}>
-                  <motion.div
-                    animate={{ rotateY: isFlipped ? 180 : 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="w-full h-full [transform-style:preserve-3d]"
-                  >
-                    <div className="absolute w-full h-full flex items-center justify-center p-6 backface-hidden">
-                      <h2 className="text-3xl font-bold text-center">{selectedCard?.korean}</h2>
-                    </div>
-                    <div className="absolute w-full h-full flex items-center justify-center p-6 [transform:rotateY(180deg)] backface-hidden">
-                      <h2 className="text-3xl font-bold text-center">{selectedCard?.japanese}</h2>
-                    </div>
-                  </motion.div>
-                </Card>
+              <div className="relative">
+                {/* ⭐ お気に入りボタン */}
+                {/* <button
+                  onClick={(e) => {
+                    e.stopPropagation() // ← 親の onClick（handleFlip）を止める
+                    toggleFavorite()
+                  }}
+                  className="absolute top-2 right-2 z-10"
+                >
+                  {isFavorite ? "★" : "☆"}
+                </button> */}
+                  <Card className="w-[300px] h-[200px] cursor-pointer bg-card" onClick={handleFlip}>
+                    <motion.div
+                      animate={{ rotateY: isFlipped ? 180 : 0 }}
+                      transition={{ duration: 0.6 }}
+                      className="w-full h-full [transform-style:preserve-3d]"
+                    >
+                      <div className="absolute w-full h-full flex items-center justify-center p-6 backface-hidden">
+                        <h2 className="text-3xl font-bold text-center">{selectedCard?.korean}</h2>
+                      </div>
+                      <div className="absolute w-full h-full flex items-center justify-center p-6 [transform:rotateY(180deg)] backface-hidden">
+                        <h2 className="text-3xl font-bold text-center">{selectedCard?.japanese}</h2>
+                      </div>
+                    </motion.div>
+                  </Card>
+                </div>
               </motion.div>
             </AnimatePresence>
           )}
