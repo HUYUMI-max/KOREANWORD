@@ -21,8 +21,10 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState("")
-  // const [favorites, setFavorites] = useState<string[]>([])
-  // const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+  const [favorites, setFavorites] = useState<string[]>([])
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+  const [direction, setDirection] = useState<"next" | "prev">("next")
+
 
 
 
@@ -53,38 +55,40 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
       })
   }, [level])
 
-  // useEffect(() => {
-  //   const baseResults = searchKeyword === ""
-  //     ? cards
-  //     : cards.filter((card) =>
-  //     (typeof card.korean === "string" && card.korean.includes(searchKeyword)) ||
-  //     (typeof card.japanese === "string" && card.japanese.includes(searchKeyword))
-  //   )
+  useEffect(() => {
+    const baseResults = searchKeyword === ""
+      ? cards
+      : cards.filter((card) =>
+      (typeof card.korean === "string" && card.korean.includes(searchKeyword)) ||
+      (typeof card.japanese === "string" && card.japanese.includes(searchKeyword))
+    )
 
-    // const finalResults = showFavoritesOnly
-    // ? baseResults.filter(card => favorites.includes(card.id))
-    // : baseResults
+    const finalResults = showFavoritesOnly
+    ? baseResults.filter(card => favorites.includes(`${level}-${card.id}`))
+    : baseResults
   
-  //   setFilteredCards(finalResults)
-  //   setCurrentIndex(0)
-  // }, [searchKeyword, cards, favorites, showFavoritesOnly])
+    setFilteredCards(finalResults)
+    setCurrentIndex(0)
+  }, [searchKeyword, cards, favorites, showFavoritesOnly])
   
   
   
   
 
   const handleNext = () => {
+    setDirection("next")
     setIsFlipped(false)
-    console.log("次へ:", currentIndex, "→", (currentIndex + 1) % cards.length, "（総数:", cards.length, "）")
-    setCurrentIndex((prev) => (prev + 1) % cards.length)
+    // console.log("次へ:", currentIndex, "→", (currentIndex + 1) % cards.length, "（総数:", cards.length, "）")
+    setCurrentIndex((prev) => (prev + 1) % filteredCards.length)
   }
   
 
   const handlePrevious = () => {
+    setDirection("prev")
     setIsFlipped(false)
     setCurrentIndex((prev) => {
-      const prevIndex = (prev - 1 + cards.length) % cards.length
-      console.log("前へ:", prev, "→", prevIndex, "（総数:", cards.length, "）")
+      const prevIndex = (prev - 1 + filteredCards.length) % filteredCards.length
+      // console.log("前へ:", prev, "→", prevIndex, "（総数:", cards.length, "）")
       return prevIndex
     })
   }
@@ -93,55 +97,76 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
     setIsFlipped(!isFlipped)
   }
 
-  // const toggleFavorite = () => {
-  //   if (!selectedCard) return
+  const toggleFavorite = () => {
+    if (!selectedCard || !level) return
+
+    const key = `${level}-${selectedCard.id}`
   
-  //   setFavorites((prev) =>
-  //     prev.includes(selectedCard.id)
-  //       ? prev.filter((id) => id !== selectedCard.id) 
-  //       : [...prev, selectedCard.id] 
-  //   )
-  // }
+    setFavorites((prev) =>
+      prev.includes(key)
+        ? prev.filter((id) => id !== key) 
+        : [...prev, key] 
+    )
+  }
+
 
   const safeIndex = Math.min(currentIndex, filteredCards.length - 1)
   const selectedCard = filteredCards[safeIndex]
-  // const isFavorite = selectedCard ? favorites.includes(selectedCard.id) : false
-  //   if (!selectedCard) {
-  //   console.log("selectedCard がまだ undefined です。データ読み込み前の状態。")
-  // } else {
-  //   console.log("表示中のカード:", {
-  //     currentIndex,
-  //     selectedCard,
-  //     total: cards.length
-  //   })
-  // }
+  const isFavorite = selectedCard && level ? favorites.includes(`${level}-${selectedCard.id}`) : false
+    if (!selectedCard) {
+    console.log("selectedCard がまだ undefined です。データ読み込み前の状態。")
+  } else {
+    console.log("表示中のカード:", {
+      currentIndex,
+      selectedCard,
+      total: cards.length
+    })
+  }
+
+  const variants = {
+    enter: (direction: "next" | "prev") => ({
+      opacity: 0,
+      x: direction === "next" ? 100 : -100,
+    }),
+    center: {
+      opacity: 1,
+      x: 0,
+    },
+    exit: (direction: "next" | "prev") => ({
+      opacity: 0,
+      x: direction === "next" ? -100 : 100,
+    }),
+  }
+  
   
 
   return (
     <div className="container mx-auto px-4 py-8">
       <SearchBar onSearch={handleSearch} />
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        {/* <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-4">
           <Switch checked={showFavoritesOnly} onCheckedChange={setShowFavoritesOnly} />
           <span className="text-sm">お気に入りだけを表示</span>
-        </div> */}
+        </div>
         <div className="flex items-center gap-4 mb-8">
           <Button variant="outline" size="icon" onClick={handlePrevious} disabled={filteredCards.length <= 1}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
           {selectedCard && (
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" custom={direction}>
               <motion.div
-                key={`${selectedCard?.id}-${isFlipped ? "back" : "front"}`}
-                initial={{ opacity: 0, x: 100 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -100 }}
+                key={selectedCard.id}
+                custom={direction}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
                 transition={{ duration: 0.3 }}
                 className="perspective-1000"
               >
               <div className="relative">
-                {/* ⭐ お気に入りボタン */}
-                {/* <button
+                
+                <button
                   onClick={(e) => {
                     e.stopPropagation() // ← 親の onClick（handleFlip）を止める
                     toggleFavorite()
@@ -149,7 +174,7 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
                   className="absolute top-2 right-2 z-10"
                 >
                   {isFavorite ? "★" : "☆"}
-                </button> */}
+                </button>
                   <Card className="w-[300px] h-[200px] cursor-pointer bg-card" onClick={handleFlip}>
                     <motion.div
                       animate={{ rotateY: isFlipped ? 180 : 0 }}
