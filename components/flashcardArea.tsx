@@ -5,21 +5,16 @@ import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import SearchBar from "./searchBar"
-import { Card } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
+import FlashcardCard, { Flashcard } from "./flashcardCard"
 
 
-interface Flashcard {
-  id: string
-  korean: string
-  japanese: string
-}
+
 
 export default function FlashcardArea({ level }: { level: "初心者" | "中級" | "上級" | null}) {
   const [cards, setCards] = useState<Flashcard[]>([])
   const [filteredCards, setFilteredCards] = useState<Flashcard[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [isFlipped, setIsFlipped] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState("")
   const [favorites, setFavorites] = useState<string[]>([])
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
@@ -51,7 +46,7 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
         setCards(selectedCards)
         setFilteredCards(selectedCards)
         setCurrentIndex(0)
-        setIsFlipped(false)
+        // setIsFlipped(false)
       })
   }, [level])
 
@@ -77,7 +72,7 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
 
   const handleNext = () => {
     setDirection("next")
-    setIsFlipped(false)
+    // setIsFlipped(false)
     // console.log("次へ:", currentIndex, "→", (currentIndex + 1) % cards.length, "（総数:", cards.length, "）")
     setCurrentIndex((prev) => (prev + 1) % filteredCards.length)
   }
@@ -85,7 +80,7 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
 
   const handlePrevious = () => {
     setDirection("prev")
-    setIsFlipped(false)
+    // setIsFlipped(false)
     setCurrentIndex((prev) => {
       const prevIndex = (prev - 1 + filteredCards.length) % filteredCards.length
       // console.log("前へ:", prev, "→", prevIndex, "（総数:", cards.length, "）")
@@ -93,9 +88,6 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
     })
   }
 
-  const handleFlip = () => {
-    setIsFlipped(!isFlipped)
-  }
 
   const toggleFavorite = () => {
     if (!selectedCard || !level) return
@@ -164,32 +156,11 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
                 transition={{ duration: 0.3 }}
                 className="perspective-1000"
               >
-              <div className="relative">
-                
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation() // ← 親の onClick（handleFlip）を止める
-                    toggleFavorite()
-                  }}
-                  className="absolute top-2 right-2 z-10"
-                >
-                  {isFavorite ? "★" : "☆"}
-                </button>
-                  <Card className="w-[300px] h-[200px] cursor-pointer bg-card" onClick={handleFlip}>
-                    <motion.div
-                      animate={{ rotateY: isFlipped ? 180 : 0 }}
-                      transition={{ duration: 0.6 }}
-                      className="w-full h-full [transform-style:preserve-3d]"
-                    >
-                      <div className="absolute w-full h-full flex items-center justify-center p-6 backface-hidden">
-                        <h2 className="text-3xl font-bold text-center">{selectedCard?.korean}</h2>
-                      </div>
-                      <div className="absolute w-full h-full flex items-center justify-center p-6 [transform:rotateY(180deg)] backface-hidden">
-                        <h2 className="text-3xl font-bold text-center">{selectedCard?.japanese}</h2>
-                      </div>
-                    </motion.div>
-                  </Card>
-                </div>
+              <FlashcardCard
+                card={selectedCard}
+                isFavorite={isFavorite}
+                onToggleFavorite={toggleFavorite}
+              />
               </motion.div>
             </AnimatePresence>
           )}
