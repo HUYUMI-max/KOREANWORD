@@ -20,19 +20,13 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const [direction, setDirection] = useState<"next" | "prev">("next")
 
-
-
-
   const handleSearch = (keyword: string) => {
     setSearchKeyword(keyword)
     setCurrentIndex(0)
   }
   
-  
-
   useEffect(() => {
     if (!level) return
-  
 
     fetch("/data/VocabularyAll.json")
       .then((res) => res.json())
@@ -46,7 +40,6 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
         setCards(selectedCards)
         setFilteredCards(selectedCards)
         setCurrentIndex(0)
-        // setIsFlipped(false)
       })
   }, [level])
 
@@ -63,31 +56,21 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
     : baseResults
   
     setFilteredCards(finalResults)
-    setCurrentIndex(0)
-  }, [searchKeyword, cards, favorites, showFavoritesOnly])
-  
-  
-  
-  
+  }, [searchKeyword, cards,favorites, showFavoritesOnly])
 
+  
   const handleNext = () => {
     setDirection("next")
-    // setIsFlipped(false)
-    // console.log("次へ:", currentIndex, "→", (currentIndex + 1) % cards.length, "（総数:", cards.length, "）")
     setCurrentIndex((prev) => (prev + 1) % filteredCards.length)
   }
   
-
   const handlePrevious = () => {
     setDirection("prev")
-    // setIsFlipped(false)
     setCurrentIndex((prev) => {
       const prevIndex = (prev - 1 + filteredCards.length) % filteredCards.length
-      // console.log("前へ:", prev, "→", prevIndex, "（総数:", cards.length, "）")
       return prevIndex
     })
   }
-
 
   const toggleFavorite = () => {
     if (!selectedCard || !level) return
@@ -100,7 +83,6 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
         : [...prev, key] 
     )
   }
-
 
   const safeIndex = Math.min(currentIndex, filteredCards.length - 1)
   const selectedCard = filteredCards[safeIndex]
@@ -130,8 +112,6 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
     }),
   }
   
-  
-
   return (
     <div className="container mx-auto px-4 py-8">
       <SearchBar onSearch={handleSearch} />
