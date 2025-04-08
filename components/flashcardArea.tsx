@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import SearchBar from "./searchBar"
 import { Switch } from "@/components/ui/switch"
 import FlashcardCard, { Flashcard } from "./flashcardCard"
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 
 
 
@@ -84,6 +85,7 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
     )
   }
 
+
   const safeIndex = Math.min(currentIndex, filteredCards.length - 1)
   const selectedCard = filteredCards[safeIndex]
   const isFavorite = selectedCard && level ? favorites.includes(`${level}-${selectedCard.id}`) : false
@@ -120,6 +122,22 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
           <Switch checked={showFavoritesOnly} onCheckedChange={setShowFavoritesOnly} />
           <span className="text-sm">お気に入りだけを表示</span>
         </div>
+        <div className="flex items-center gap-2 mb-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="bg-blue-500 text-white">シャッフル</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => console.log("シャッフル選択")}>
+                シャッフル
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => console.log("元の順番に戻す")}>
+                元の順番
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
         <div className="flex items-center gap-4 mb-8">
           <Button variant="outline" size="icon" onClick={handlePrevious} disabled={filteredCards.length <= 1}>
             <ChevronLeft className="h-4 w-4" />
