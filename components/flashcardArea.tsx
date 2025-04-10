@@ -8,6 +8,7 @@ import SearchBar from "./searchBar"
 import { Switch } from "@/components/ui/switch"
 import FlashcardCard, { Flashcard } from "./flashcardCard"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"
 
 
 
@@ -20,6 +21,9 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
   const [favorites, setFavorites] = useState<string[]>([])
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const [direction, setDirection] = useState<"next" | "prev">("next")
+  const [showShuffleDialog, setShowShuffleDialog] = useState(false)
+  const [originalCards, setOriginalCards] = useState<Flashcard[]>([])
+
 
   const handleSearch = (keyword: string) => {
     setSearchKeyword(keyword)
@@ -57,6 +61,7 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
     : baseResults
   
     setFilteredCards(finalResults)
+    setOriginalCards(finalResults)
   }, [searchKeyword, cards,favorites, showFavoritesOnly])
 
   
@@ -113,10 +118,32 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
       x: direction === "next" ? -100 : 100,
     }),
   }
+
+  const shuffleCards = () => {
+    const shuffled = [...filteredCards].sort(() => Math.random() - 0.5)
+    setFilteredCards(shuffled)
+    setCurrentIndex(0)
+  }
+  
   
   return (
     <div className="container mx-auto px-4 py-8">
       <SearchBar onSearch={handleSearch} />
+      <AlertDialog open={showShuffleDialog} onOpenChange={setShowShuffleDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>シャッフルしてもよろしいですか？</AlertDialogTitle>
+            <AlertDialogDescription>シャッフルすると、カードの順番がランダムになります。</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              shuffleCards()
+              setShowShuffleDialog(false)
+            }}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <div className="flex items-center gap-2 mb-4">
           <Switch checked={showFavoritesOnly} onCheckedChange={setShowFavoritesOnly} />
@@ -128,10 +155,13 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
               <Button className="bg-blue-500 text-white">シャッフル</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => console.log("シャッフル選択")}>
+              <DropdownMenuItem onClick={() => setShowShuffleDialog(true)}>
                 シャッフル
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => console.log("元の順番に戻す")}>
+              <DropdownMenuItem onClick={() => {
+                setFilteredCards(originalCards)
+                setCurrentIndex(0)
+              }}>
                 元の順番
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -170,4 +200,4 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
       </div>
     </div>
   )
-}
+  }
