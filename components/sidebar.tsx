@@ -6,12 +6,16 @@ import {
   ScrollArea,
   ScrollBar,
 } from "@/components/ui/scroll-area"
+import { useState } from "react"
+
 
 interface SidebarProps {
   onSelectLevel: (level: "初心者" | "中級" | "上級") => void;
 }
 
 export default function Sidebar({onSelectLevel}: SidebarProps){
+  const [vocabLists, setVocabLists] = useState<string[]>(["初級", "中級", "上級"])
+
   return (
     <div className="hidden border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:block md:w-[240px]">
       <ScrollArea className="h-full py-6">
