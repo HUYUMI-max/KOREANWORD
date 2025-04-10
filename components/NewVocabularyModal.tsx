@@ -7,21 +7,35 @@ interface NewVocabularyModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onCreate: (name: string) => void
+  existingNames: string[]
 }
 
 export default function NewVocabularyModal({
   open,
   onOpenChange,
   onCreate,
+  existingNames,
 }: NewVocabularyModalProps) {
   const [name, setName] = useState("")
+  const [error, setError] = useState("")
 
   const handleCreate = () => {
-    if (name.trim()) {
-      onCreate(name.trim())
+    const trimmed = name.trim()
+    if (!trimmed) {
+        setError("単語帳名を入力してください。")
+        return
+      }
+  
+      if (existingNames.includes(trimmed)) {
+        setError("同じ名前の単語帳がすでに存在します。")
+        return
+      }
+  
+      // 正常なら作成
+      onCreate(trimmed)
       setName("")
+      setError("")
       onOpenChange(false)
-    }
   }
 
   return (
@@ -32,10 +46,14 @@ export default function NewVocabularyModal({
         </DialogHeader>
         <Input
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value)
+            setError("") // 入力変更でエラー消す
+          }}
           placeholder="単語帳名を入力"
           className="mt-4"
         />
+        {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
         <DialogFooter>
           <Button onClick={handleCreate}>作成</Button>
         </DialogFooter>
@@ -43,3 +61,4 @@ export default function NewVocabularyModal({
     </Dialog>
   )
 }
+

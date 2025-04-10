@@ -87,13 +87,11 @@ export default function Sidebar({onSelectLevel}: SidebarProps){
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         onCreate={(name) => {
-          const trimmed = name.trim()
-          if (trimmed && !vocabLists.includes(trimmed)) {
-            setVocabLists([...vocabLists, trimmed])
-            setShowCreateDialog(false)
-          }
+          setVocabLists([...vocabLists, name])
         }}
+        existingNames={vocabLists}
       />
+
 
 
     </div>
