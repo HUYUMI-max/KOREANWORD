@@ -7,6 +7,7 @@ import {
   ScrollBar,
 } from "@/components/ui/scroll-area"
 import { useState } from "react"
+import NewVocabularyModal from "@/components/NewVocabularyModal"
 
 
 interface SidebarProps {
@@ -15,13 +16,16 @@ interface SidebarProps {
 
 export default function Sidebar({onSelectLevel}: SidebarProps){
   const [vocabLists, setVocabLists] = useState<string[]>(["初級", "中級", "上級"])
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [newListName, setNewListName] = useState("")
+
 
   return (
     <div className="hidden border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:block md:w-[240px]">
       <ScrollArea className="h-full py-6">
         <div className="px-4 py-2">
           <h2 className="mb-2 text-lg font-semibold">単語帳</h2>
-          <Button variant="outline" className="w-full justify-start" onClick={() => {}}>
+          <Button variant="outline" className="w-full justify-start" onClick={() => setShowCreateDialog(true)}>
             <Plus className="mr-2 h-4 w-4" />
             新規作成
           </Button>
@@ -60,11 +64,38 @@ export default function Sidebar({onSelectLevel}: SidebarProps){
             マイ単語帳
           </h3>
           <div className="space-y-1">
-            {/* カスタム単語帳がここに表示される*/}
+            {vocabLists.slice(3).map((list, index) => (
+              <Button
+                key={index}
+                variant="ghost"
+                className="w-full justify-start"
+                onClick={() => {
+                  console.log(`"${list}" 単語帳がクリックされました`)
+                  // ここで選択した単語帳に切り替える処理が必要なら後で追加
+                }}
+              >
+              <FolderOpen className="mr-2 h-4 w-4" />
+              {list}
+            </Button>
+          ))}
+
           </div>
         </div>
         <ScrollBar/>
       </ScrollArea>
+      <NewVocabularyModal
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onCreate={(name) => {
+          const trimmed = name.trim()
+          if (trimmed && !vocabLists.includes(trimmed)) {
+            setVocabLists([...vocabLists, trimmed])
+            setShowCreateDialog(false)
+          }
+        }}
+      />
+
+
     </div>
   )
 }

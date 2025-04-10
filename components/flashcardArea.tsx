@@ -120,6 +120,7 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
   }
 
   const shuffleCards = () => {
+    // filteredCardsの順番をシャッフル。originalCardsは絶対に変更しないこと。
     const shuffled = [...filteredCards].sort(() => Math.random() - 0.5)
     setFilteredCards(shuffled)
     setCurrentIndex(0)

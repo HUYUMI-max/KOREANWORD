@@ -3,7 +3,17 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 
-export default function NewVocabularyModal({ open, onOpenChange, onCreate }: { open: boolean, onOpenChange: (open: boolean) => void, onCreate: (name: string) => void }) {
+interface NewVocabularyModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onCreate: (name: string) => void
+}
+
+export default function NewVocabularyModal({
+  open,
+  onOpenChange,
+  onCreate,
+}: NewVocabularyModalProps) {
   const [name, setName] = useState("")
 
   const handleCreate = () => {
