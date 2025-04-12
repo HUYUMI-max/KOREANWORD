@@ -1,12 +1,8 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import { Flashcard } from "@/lib/types";
 
-export interface Flashcard {
-    id: string
-    korean: string
-    japanese: string
-  }
 
 interface FlashcardCardProps {
     card: Flashcard

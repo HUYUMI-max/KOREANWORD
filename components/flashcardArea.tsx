@@ -6,10 +6,11 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import SearchBar from "./searchBar"
 import { Switch } from "@/components/ui/switch"
-import FlashcardCard, { Flashcard } from "./flashcardCard"
+import FlashcardCard from "./flashcardCard"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"
 import AddWordDialog from "./AddWordDialog"
+import { Flashcard } from "@/lib/types"
 
 
 
@@ -24,6 +25,8 @@ export default function FlashcardArea({ level, list }: { level: "初心者" | "�
   const [showShuffleDialog, setShowShuffleDialog] = useState(false)
   const [originalCards, setOriginalCards] = useState<Flashcard[]>([])
   const [showAddWordDialog, setShowAddWordDialog] = useState(false)
+  const [vocabData, setVocabData] = useState<Record<string, Flashcard[]>>({})
+
 
 
 
@@ -76,7 +79,11 @@ export default function FlashcardArea({ level, list }: { level: "初心者" | "�
     setOriginalCards(finalResults)
   }, [searchKeyword, cards,favorites, showFavoritesOnly])
 
+  useEffect(() => {
+    console.log("単語帳の中身:", vocabData)
+  }, [vocabData])
   
+
   const handleNext = () => {
     setDirection("next")
     setCurrentIndex((prev) => (prev + 1) % filteredCards.length)
@@ -138,10 +145,32 @@ export default function FlashcardArea({ level, list }: { level: "初心者" | "�
     setCurrentIndex(0)
   }
 
-  const handleSaveWord = (word: string) => {
-    // 単語を追加する処理
-    console.log("単語を追加:", word);
-  };
+  const handleSaveWord = (korean: string, japanese: string) => {
+    if (!list) return
+  
+    const newWord: Flashcard = {
+      id: Date.now().toString(),
+      korean,
+      japanese,
+    }
+  
+    setVocabData((prev) => {
+      const updatedList = prev[list] ? [...prev[list], newWord] : [newWord]
+      return {
+        ...prev,
+        [list]: updatedList,
+      }
+    })
+  
+    // UIにも反映させるためにcardsを更新
+    setCards((prev) => [...prev, newWord])
+    setFilteredCards((prev) => [...prev, newWord])
+  }
+ 
+  if (filteredCards.length > 0) {
+    console.log("表示中の単語:", filteredCards.map(card => card.korean))
+  }
+  
   
   return (
     <div className="container mx-auto px-4 py-8">
