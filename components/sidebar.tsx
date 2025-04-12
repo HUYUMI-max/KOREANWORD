@@ -12,12 +12,12 @@ import NewVocabularyModal from "@/components/NewVocabularyModal"
 
 interface SidebarProps {
   onSelectLevel: (level: "初心者" | "中級" | "上級") => void;
+  onSelectList: (listName: string) => void
 }
 
-export default function Sidebar({onSelectLevel}: SidebarProps){
-  const [vocabLists, setVocabLists] = useState<string[]>(["初級", "中級", "上級"])
+export default function Sidebar({onSelectLevel, onSelectList}: SidebarProps){
+  const [vocabLists, setVocabLists] = useState<string[]>(["初心者", "中級", "上級"])
   const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [newListName, setNewListName] = useState("")
 
 
   return (
@@ -33,20 +33,19 @@ export default function Sidebar({onSelectLevel}: SidebarProps){
         <div className="px-4 py-2">
           <h3 className="mb-2 text-sm font-semibold">レベル別単語帳</h3>
           <div className="space-y-1">
+          {["初心者", "中級", "上級"].map((level) => (
             <Button 
+              key={level}
               variant="ghost" 
               className="w-full justify-start" 
               onClick={() => {
-                onSelectLevel("初心者")}}>
+                onSelectLevel(level as "初心者" | "中級" | "上級")
+              }}>
               <FolderOpen className="mr-2 h-4 w-4" />
-              TOPIK 1-2級 (初級)
+              TOPIK ({level})
             </Button>
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start" 
-              onClick={() => {
-                onSelectLevel("中級")}}>
-              <FolderOpen className="mr-2 h-4 w-4" />
+          ))}
+              {/* <FolderOpen className="mr-2 h-4 w-4" />
               TOPIK 3-5級 (中級)
             </Button>
             <Button 
@@ -56,7 +55,7 @@ export default function Sidebar({onSelectLevel}: SidebarProps){
                 onSelectLevel("上級")}}>
               <FolderOpen className="mr-2 h-4 w-4" />
               TOPIK 6級 (上級)
-            </Button>
+            </Button> */}
           </div>
         </div>
         <div className="px-4 py-2">
@@ -70,8 +69,7 @@ export default function Sidebar({onSelectLevel}: SidebarProps){
                 variant="ghost"
                 className="w-full justify-start"
                 onClick={() => {
-                  console.log(`"${list}" 単語帳がクリックされました`)
-                  // ここで選択した単語帳に切り替える処理が必要なら後で追加
+                  onSelectList(list)
                 }}
               >
               <FolderOpen className="mr-2 h-4 w-4" />

@@ -9,11 +9,11 @@ import { Switch } from "@/components/ui/switch"
 import FlashcardCard, { Flashcard } from "./flashcardCard"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"
+import AddWordDialog from "./AddWordDialog"
 
 
 
-
-export default function FlashcardArea({ level }: { level: "初心者" | "中級" | "上級" | null}) {
+export default function FlashcardArea({ level, list }: { level: "初心者" | "中級" | "上級" | null, list: string | null}) {
   const [cards, setCards] = useState<Flashcard[]>([])
   const [filteredCards, setFilteredCards] = useState<Flashcard[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -23,6 +23,8 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
   const [direction, setDirection] = useState<"next" | "prev">("next")
   const [showShuffleDialog, setShowShuffleDialog] = useState(false)
   const [originalCards, setOriginalCards] = useState<Flashcard[]>([])
+  const [showAddWordDialog, setShowAddWordDialog] = useState(false)
+
 
 
   const handleSearch = (keyword: string) => {
@@ -31,22 +33,32 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
   }
   
   useEffect(() => {
-    if (!level) return
-
-    fetch("/data/VocabularyAll.json")
-      .then((res) => res.json())
-      .then((data) => {
-        const selectedCards: Flashcard[] = data[level].map((item: any) => ({
-          id: String(item.id),
-          korean: item.korean,
-          japanese: item.japanese,
-        }))
-
-        setCards(selectedCards)
-        setFilteredCards(selectedCards)
-        setCurrentIndex(0)
-      })
-  }, [level])
+    if (!level && !list) return
+  
+    if (level) {
+      fetch("/data/VocabularyAll.json")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data[level]) {
+            const selectedCards: Flashcard[] = data[level].map((item: any) => ({
+              id: String(item.id),
+              korean: item.korean,
+              japanese: item.japanese,
+            }))
+            setCards(selectedCards)
+            setFilteredCards(selectedCards)
+            setCurrentIndex(0)
+          }
+        })
+    }
+  
+    if (list && !level) {
+      setCards([])
+      setFilteredCards([])
+      setCurrentIndex(0)
+    }
+  }, [level, list])
+  
 
   useEffect(() => {
     const baseResults = searchKeyword === ""
@@ -125,7 +137,11 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
     setFilteredCards(shuffled)
     setCurrentIndex(0)
   }
-  
+
+  const handleSaveWord = (word: string) => {
+    // 単語を追加する処理
+    console.log("単語を追加:", word);
+  };
   
   return (
     <div className="container mx-auto px-4 py-8">
@@ -198,7 +214,19 @@ export default function FlashcardArea({ level }: { level: "初心者" | "中級"
           </Button>
         </div>
         <p className="text-sm text-muted-foreground">カードをクリックして裏返す</p>
+        <Button
+          className="mt-4 bg-green-600 text-white"
+          onClick={() => setShowAddWordDialog(true)}
+        >
+          + 単語を追加
+        </Button>
+
       </div>
+      <AddWordDialog
+        open={showAddWordDialog}
+        onOpenChange={setShowAddWordDialog}
+        onSave={handleSaveWord}
+      />    
     </div>
-  )
+    )
   }
