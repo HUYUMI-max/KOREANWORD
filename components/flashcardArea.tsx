@@ -11,6 +11,10 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"
 import AddWordDialog from "./AddWordDialog"
 import { Flashcard } from "@/lib/types"
+import { addWordToFirestore } from "@/lib/firebase"
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot } from "firebase/firestore"
 
 
 
@@ -82,6 +86,26 @@ export default function FlashcardArea({ level, list }: { level: "初心者" | "�
   useEffect(() => {
     console.log("単語帳の中身:", vocabData)
   }, [vocabData])
+
+  useEffect(() => {
+    if (!list) return
+  
+    const unsubscribe = onSnapshot(
+      collection(db, "vocabLists", list, "words"),
+      (snapshot) => {
+        const newCards = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Flashcard[]
+        setCards(newCards)
+        setFilteredCards(newCards)
+        setCurrentIndex(0)
+      }
+    )
+  
+    return () => unsubscribe()
+  }, [list])
+  
   
 
   const handleNext = () => {
@@ -145,29 +169,26 @@ export default function FlashcardArea({ level, list }: { level: "初心者" | "�
     setCurrentIndex(0)
   }
 
-  const handleSaveWord = (korean: string, japanese: string) => {
-    if (!list) return
+  const handleSaveWord = async (korean: string, japanese: string) => {
+    if (!list) return;
   
-    const newWord: Flashcard = {
-      id: Date.now().toString(),
-      korean,
-      japanese,
+    const id = Date.now().toString();
+    const newWord: Flashcard = { id, korean, japanese };
+  
+    try {
+      const docRef = doc(db, "vocabLists", list, "words", id);
+      await setDoc(docRef, newWord);
+      console.log("✅ Firestoreに保存完了");
+  
+      // 画面にも即反映（オプション）
+      setCards(prev => [...prev, newWord]);
+      setFilteredCards(prev => [...prev, newWord]);
+    } catch (error) {
+      console.error("❌ Firestore保存エラー:", error);
     }
-  
-    setVocabData((prev) => {
-      const updatedList = prev[list] ? [...prev[list], newWord] : [newWord]
-      return {
-        ...prev,
-        [list]: updatedList,
-      }
-    })
-  
-    // UIにも反映させるためにcardsを更新
-    setCards((prev) => [...prev, newWord])
-    setFilteredCards((prev) => [...prev, newWord])
   }
- 
-  if (filteredCards.length > 0) {
+
+    if (filteredCards.length > 0) {
     console.log("表示中の単語:", filteredCards.map(card => card.korean))
   }
   
@@ -255,6 +276,7 @@ export default function FlashcardArea({ level, list }: { level: "初心者" | "�
         open={showAddWordDialog}
         onOpenChange={setShowAddWordDialog}
         onSave={handleSaveWord}
+        list={list}
       />    
     </div>
     )

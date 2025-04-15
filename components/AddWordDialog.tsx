@@ -10,22 +10,45 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
+import { addWordToFirestore } from "@/lib/firebase"
 
 interface AddWordDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSave: (korean: string, japanese: string) => void
+  list: string | null 
 }
 
 export default function AddWordDialog({
   open,
   onOpenChange,
   onSave,
+  list,
 }: AddWordDialogProps) {
   const [korean, setKorean] = useState("")
   const [japanese, setJapanese] = useState("")
   const [hasTranslated, setHasTranslated] = useState(false)
 
+  const handleSave = async () => {
+    if (!list || (!korean.trim() && !japanese.trim())) return
+  
+    const newWord = {
+      korean: korean.trim(),
+      japanese: japanese.trim(),
+    }
+  
+    try {
+      await addWordToFirestore(list, newWord) // ✅ Firestore に追加！
+      console.log("✅ Firestoreに保存完了")
+  
+      setKorean("")
+      setJapanese("")
+      onOpenChange(false)
+    } catch (error) {
+      console.error("❌ Firestore保存エラー:", error)
+    }
+  }
+  
   const translateText = async (text: string, sourceLang: string, targetLang: string): Promise<string> => {
     return `（${targetLang}に翻訳）${text}`
   }
@@ -60,12 +83,6 @@ export default function AddWordDialog({
     setHasTranslated(false)
   }
 
-  const handleSave = () => {
-    if (korean.trim() && japanese.trim()) {
-      onSave(korean.trim(), japanese.trim())
-      onOpenChange(false)
-    }
-  }
 
   const handleSaveAndContinue = () => {
     if (korean.trim() && japanese.trim()) {
