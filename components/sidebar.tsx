@@ -6,8 +6,11 @@ import {
   ScrollArea,
   ScrollBar,
 } from "@/components/ui/scroll-area"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import NewVocabularyModal from "@/components/NewVocabularyModal"
+import { collection, getDocs } from "firebase/firestore"
+import { db } from "@/lib/firebase"
+import { createVocabularyFolder } from "@/lib/firestore"
 
 
 interface SidebarProps {
@@ -18,6 +21,27 @@ interface SidebarProps {
 export default function Sidebar({onSelectLevel, onSelectList}: SidebarProps){
   const [vocabLists, setVocabLists] = useState<string[]>(["初心者", "中級", "上級"])
   const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [folderList, setFolderList] = useState<string[]>([])
+
+  const fetchFolders = async () => {
+    try {
+      const snapshot = await getDocs(collection(db, "vocabLists"))
+      console.log("snapshot.docs:", snapshot.docs)
+  
+      const folders = snapshot.docs.map(doc => doc.id)
+      console.log("フォルダ名一覧:", folders)
+  
+      setFolderList(folders)
+    } catch (error) {
+      console.error("フォルダ取得エラー:", error)
+    }
+  }
+  
+
+  useEffect(() => {
+    fetchFolders()
+  }, [])
+
 
 
   return (
@@ -45,17 +69,6 @@ export default function Sidebar({onSelectLevel, onSelectList}: SidebarProps){
               TOPIK ({level})
             </Button>
           ))}
-              {/* <FolderOpen className="mr-2 h-4 w-4" />
-              TOPIK 3-5級 (中級)
-            </Button>
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start" 
-              onClick={() => {
-                onSelectLevel("上級")}}>
-              <FolderOpen className="mr-2 h-4 w-4" />
-              TOPIK 6級 (上級)
-            </Button> */}
           </div>
         </div>
         <div className="px-4 py-2">
@@ -63,6 +76,22 @@ export default function Sidebar({onSelectLevel, onSelectList}: SidebarProps){
             マイ単語帳
           </h3>
           <div className="space-y-1">
+
+          {folderList.map((name) => (
+            <Button
+              key={name}
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => {
+                onSelectList(name)
+              }}
+            >
+              <FolderOpen className="mr-2 h-4 w-4" />
+              {name}
+            </Button>
+          ))}
+
+
             {vocabLists.slice(3).map((list, index) => (
               <Button
                 key={index}
@@ -84,14 +113,12 @@ export default function Sidebar({onSelectLevel, onSelectList}: SidebarProps){
       <NewVocabularyModal
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
-        onCreate={(name) => {
-          setVocabLists([...vocabLists, name])
+        onCreate={async (name) => {
+          await createVocabularyFolder(name)
+          await fetchFolders()
         }}
         existingNames={vocabLists}
       />
-
-
-
     </div>
   )
 }

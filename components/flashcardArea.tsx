@@ -59,13 +59,9 @@ export default function FlashcardArea({ level, list }: { level: "初心者" | "�
         })
     }
   
-    if (list && !level) {
-      setCards([])
-      setFilteredCards([])
-      setCurrentIndex(0)
-    }
+    // ✅ Firestore側のlistが選ばれているときは、何もしない（Firestore用useEffectで処理済）
   }, [level, list])
-  
+    
 
   useEffect(() => {
     const baseResults = searchKeyword === ""
