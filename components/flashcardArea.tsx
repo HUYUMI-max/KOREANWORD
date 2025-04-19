@@ -15,6 +15,7 @@ import { addWordToFirestore } from "@/lib/firebase"
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot } from "firebase/firestore"
+import { deleteWordFromFolder } from "@/lib/firestore"
 
 
 
@@ -72,12 +73,15 @@ export default function FlashcardArea({ level, list }: { level: "初心者" | "�
     )
 
     const finalResults = showFavoritesOnly
-    ? baseResults.filter(card => favorites.includes(`${level}-${card.id}`))
+    ? baseResults.filter(card => {
+        const key = level ? `${level}-${card.id}` : `${list}-${card.id}`
+        return favorites.includes(key)
+      })
     : baseResults
   
     setFilteredCards(finalResults)
     setOriginalCards(finalResults)
-  }, [searchKeyword, cards,favorites, showFavoritesOnly])
+  }, [searchKeyword, cards, favorites, showFavoritesOnly, level, list])
 
   useEffect(() => {
     console.log("単語帳の中身:", vocabData)
@@ -95,7 +99,7 @@ export default function FlashcardArea({ level, list }: { level: "初心者" | "�
         })) as Flashcard[]
         setCards(newCards)
         setFilteredCards(newCards)
-        setCurrentIndex(0)
+        
       }
     )
   
@@ -118,9 +122,11 @@ export default function FlashcardArea({ level, list }: { level: "初心者" | "�
   }
 
   const toggleFavorite = () => {
-    if (!selectedCard || !level) return
-
-    const key = `${level}-${selectedCard.id}`
+    if (!selectedCard || (!level && !list)) return
+  
+    const key = level
+      ? `${level}-${selectedCard.id}`
+      : `${list}-${selectedCard.id}`
   
     setFavorites((prev) =>
       prev.includes(key)
@@ -129,10 +135,30 @@ export default function FlashcardArea({ level, list }: { level: "初心者" | "�
     )
   }
 
+  const handleDeleteWord = async (wordId: string) => {
+    console.log("削除ボタンがクリックされました", { wordId, list });
+    if (!list) {
+      console.log("listがnullのため削除できません");
+      return;
+    }
+    if (confirm("この単語を本当に削除しますか？")) {
+      console.log("削除を実行します", { list, wordId });
+      try {
+        await deleteWordFromFolder(list, wordId);
+        console.log("削除が成功しました");
+      } catch (error) {
+        console.error("削除中にエラーが発生しました:", error);
+      }
+    }
+  }
+
 
   const safeIndex = Math.min(currentIndex, filteredCards.length - 1)
   const selectedCard = filteredCards[safeIndex]
-  const isFavorite = selectedCard && level ? favorites.includes(`${level}-${selectedCard.id}`) : false
+  const isFavorite = selectedCard ? 
+    (level ? favorites.includes(`${level}-${selectedCard.id}`) : 
+     list ? favorites.includes(`${list}-${selectedCard.id}`) : false) 
+    : false
     if (!selectedCard) {
     console.log("selectedCard がまだ undefined です。データ読み込み前の状態。")
   } else {
@@ -251,6 +277,7 @@ export default function FlashcardArea({ level, list }: { level: "初心者" | "�
                 card={selectedCard}
                 isFavorite={isFavorite}
                 onToggleFavorite={toggleFavorite}
+                onDelete={handleDeleteWord} 
               />
               </motion.div>
             </AnimatePresence>
