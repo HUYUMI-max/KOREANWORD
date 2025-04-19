@@ -53,6 +53,8 @@ export default function AddWordDialog({
     return `（${targetLang}に翻訳）${text}`
   }
 
+  // フォーカス時に一度だけ自動翻訳。再入力時は手動翻訳なので依存は不要
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (korean && !japanese && !hasTranslated) {
       translateText(korean, "ko", "ja").then((result) => {
@@ -61,6 +63,9 @@ export default function AddWordDialog({
       })
     }
   }, [korean])
+
+  // フォーカス時に一度だけ自動翻訳。再入力時は手動翻訳なので依存は不要
+  // eslint-disable-next-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (japanese && !korean && !hasTranslated) {
