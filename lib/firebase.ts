@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app"
 import { getFirestore, collection, addDoc, updateDoc } from "firebase/firestore"
 import { getAuth } from "firebase/auth"
-import { firebaseConfig } from "@/config/firebaseConfig"
+import { firebaseConfig } from "../config/firebaseConfig"
 import { Flashcard } from "@/lib/types"
 
 
