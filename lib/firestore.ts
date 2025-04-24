@@ -1,14 +1,13 @@
-import { db } from "../lib/firebase"
-import { doc, setDoc, serverTimestamp, deleteDoc } from "firebase/firestore"
+// lib/firestore.ts  – もう Clerk を import しない
+import { db } from "@/lib/firebase"
+import { doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore"
 
-export const createVocabularyFolder = async (folderName: string) => {
-  const folderRef = doc(db, "vocabLists", folderName)
-  await setDoc(folderRef, {
-    name: folderName,
-    createdAt: serverTimestamp(),
-  })
+// userId を “引数” でもらう関数だけ残す
+export const addWordToFirestore = async (
+  userId: string,
+  folderName: string,
+  word: { korean: string; japanese: string }
+) => {
+  const wordRef = doc(db, "users", userId, "folders", folderName, "words", crypto.randomUUID())
+  await setDoc(wordRef, { ...word, createdAt: serverTimestamp() })
 }
-
-export const deleteWordFromFolder = async (folderName: string, wordId: string) => {
-    await deleteDoc(doc(db, "vocabLists", folderName, "words", wordId))
-  }

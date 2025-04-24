@@ -4,29 +4,34 @@ import { getAuth } from "firebase/auth"
 import { firebaseConfig } from "../config/firebaseConfig"
 import { Flashcard } from "@/lib/types"
 
-
-// Firebase アプリの初期化
+// Firebase アプリの初期化（初回のみ）
 const app = initializeApp(firebaseConfig)
 
 // Firestore と Auth をエクスポート
 export const db = getFirestore(app)
 export const auth = getAuth(app)
 
-// 単語を Firestore に追加する関数
+/**
+ * 単語を Firestore に追加する関数
+ * @param uid - Clerk で取得した user.id（App Router では useUser() から取得して渡す）
+ * @param listName - 単語リストの名前（"default"など）
+ * @param word - 単語データ（Flashcard 型から id を除いたもの）
+ */
 export const addWordToFirestore = async (
+  uid: string,
   listName: string,
   word: Omit<Flashcard, "id">
 ) => {
-  try {
-    const collectionRef = collection(db, "vocabLists", listName, "words")
-    const docRef = await addDoc(collectionRef, word)
+  const collectionRef = collection(db, "users", uid, "words") // 🔐セキュリティルールに対応したパス
 
-    // 🔥 追加直後に `id` フィールドを追記
-    await updateDoc(docRef, { id: docRef.id })
+  const docRef = await addDoc(collectionRef, {
+    ...word,
+    list: listName,
+    createdAt: new Date(),
+  })
 
-    console.log("単語を追加しました！ID:", docRef.id)
-  } catch (error) {
-    console.error("Firestoreへの単語追加に失敗しました:", error)
-    throw error
-  }
+  // Firestore 上にも `id` フィールドを追加（後から使いやすくなる）
+  await updateDoc(docRef, { id: docRef.id })
+
+  console.log("✅ Firestoreに単語を追加しました！ID:", docRef.id)
 }

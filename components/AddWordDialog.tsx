@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 import { addWordToFirestore } from "@/lib/firebase"
+import { useUser } from "@clerk/nextjs"
+
 
 interface AddWordDialogProps {
   open: boolean
@@ -29,18 +31,25 @@ export default function AddWordDialog({
   const [japanese, setJapanese] = useState("")
   const [hasTranslated, setHasTranslated] = useState(false)
 
+  const { user } = useUser()
+
   const handleSave = async () => {
     if (!list || (!korean.trim() && !japanese.trim())) return
-  
+
+    if (!user) {
+      console.error("ユーザーが未ログインです")
+      return
+    }
+
     const newWord = {
       korean: korean.trim(),
       japanese: japanese.trim(),
     }
-  
+
     try {
-      await addWordToFirestore(list, newWord) // ✅ Firestore に追加！
+      await addWordToFirestore(user.id, list, newWord) // ✅ 修正ポイント
       console.log("✅ Firestoreに保存完了")
-  
+
       setKorean("")
       setJapanese("")
       onOpenChange(false)
