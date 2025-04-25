@@ -2,12 +2,12 @@ import { auth } from "@clerk/nextjs/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { NextRequest, NextResponse } from "next/server";
 
-// DELETE /api/folders/[folderName]
+// App Router に準拠した params の受け取り方
 export async function DELETE(
   request: NextRequest,
-  context: { params: { folderName: string } } // ← これが重要！
+  context: { params: { folderName: string } } // 👈 ここを `context` として受け取る！
 ) {
-  const { folderName } = context.params;
+  const folderName = context.params.folderName;
 
   try {
     const { userId } = await auth();
@@ -24,11 +24,12 @@ export async function DELETE(
     const wordSnapshot = await folderRef.collection("words").get();
     const batch = adminDb.batch();
 
-    wordSnapshot.forEach(doc => {
+    wordSnapshot.forEach((doc) => {
       batch.delete(doc.ref);
     });
 
     batch.delete(folderRef);
+
     await batch.commit();
 
     return NextResponse.json({ message: "Folder deleted successfully" }, { status: 200 });
