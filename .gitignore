@@ -34,3 +34,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# 例: serviceAccountKey.json を除外
+serviceAccountKey.json

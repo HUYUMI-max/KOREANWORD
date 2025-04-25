@@ -1,14 +1,52 @@
-import { db } from "../lib/firebase"
-import { doc, setDoc, serverTimestamp, deleteDoc } from "firebase/firestore"
+// lib/firestore.ts
+// Clerk は import せず、userId は必ず引数でもらう設計に統一
 
-export const createVocabularyFolder = async (folderName: string) => {
-  const folderRef = doc(db, "vocabLists", folderName)
-  await setDoc(folderRef, {
-    name: folderName,
-    createdAt: serverTimestamp(),
-  })
-}
+import { db } from "@/lib/firebase";
+import {
+  doc,
+  setDoc,
+  deleteDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 
-export const deleteWordFromFolder = async (folderName: string, wordId: string) => {
-    await deleteDoc(doc(db, "vocabLists", folderName, "words", wordId))
-  }
+/**
+ * 単語をフォルダに追加
+ * Firestore パス: users/{userId}/folders/{folderName}/words/{wordId}
+ */
+export const addWordToFirestore = async (
+  userId: string,
+  folderName: string,
+  word: { korean: string; japanese: string }
+) => {
+  const wordRef = doc(
+    db,
+    "users",
+    userId,
+    "folders",
+    folderName,
+    "words",
+    crypto.randomUUID()
+  );
+  await setDoc(wordRef, { ...word, createdAt: serverTimestamp() });
+};
+
+/**
+ * 単語をフォルダから削除
+ * `flashcardArea.tsx` などから呼び出される
+ */
+export const deleteWordFromFolder = async (
+  userId: string,
+  folderName: string,
+  wordId: string
+) => {
+  const wordRef = doc(
+    db,
+    "users",
+    userId,
+    "folders",
+    folderName,
+    "words",
+    wordId
+  );
+  await deleteDoc(wordRef);
+};
