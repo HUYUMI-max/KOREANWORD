@@ -2,12 +2,15 @@ import { auth } from "@clerk/nextjs/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { NextRequest, NextResponse } from "next/server";
 
-// App Router に準拠した params の受け取り方
+// Admin SDK を使うので Node.js ランタイムを明示
+export const runtime = "nodejs";
+
+// DELETE /api/folders/[folderName]
 export async function DELETE(
-  request: NextRequest,
-  context: { params: { folderName: string } } // 👈 ここを `context` として受け取る！
+  _req: NextRequest,
+  context: any            // ← 型を付けずに Next の推論に任せる
 ) {
-  const folderName = context.params.folderName;
+  const { folderName } = context.params as { folderName: string };
 
   try {
     const { userId } = await auth();
@@ -15,26 +18,31 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // users/{uid}/folders/{folderName}
     const folderRef = adminDb
       .collection("users")
       .doc(userId)
       .collection("folders")
       .doc(folderName);
 
-    const wordSnapshot = await folderRef.collection("words").get();
+    // words サブコレクションを一括削除
+    const wordsSnap = await folderRef.collection("words").get();
     const batch = adminDb.batch();
+    wordsSnap.forEach((d) => batch.delete(d.ref));
 
-    wordSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-
+    // フォルダ本体も削除
     batch.delete(folderRef);
-
     await batch.commit();
 
-    return NextResponse.json({ message: "Folder deleted successfully" }, { status: 200 });
-  } catch (error) {
-    console.error("DELETE /api/folders/[folderName] error:", error);
-    return NextResponse.json({ error: "Failed to delete folder" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Folder deleted successfully" },
+      { status: 200 }
+    );
+  } catch (e: any) {
+    console.error("DELETE /api/folders/[folderName] error:", e);
+    return NextResponse.json(
+      { error: e.message ?? "Failed to delete folder" },
+      { status: 500 }
+    );
   }
 }
