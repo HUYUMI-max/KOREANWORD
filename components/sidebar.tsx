@@ -37,11 +37,20 @@ export default function Sidebar({ onSelectLevel, onSelectList }: SidebarProps) {
     mutate()
   }
 
-  const handleDelete = async (name: string) => {
-    await deleteVocabularyFolder(name)
-    mutate()
+  const handleDelete = async (folderName: string) => {
+    if (!confirm(`「${folderName}」フォルダを削除しますか？`)) return
+  
+    try {
+      await deleteVocabularyFolder(folderName)
+  
+      // キャッシュから手動で削除（再フェッチしない）
+      mutate((prev) => prev?.filter((f) => f.name !== folderName), false)
+    } catch (e) {
+      alert("削除に失敗しました")
+      console.error(e)
+    }
   }
-
+  
   return (
     <div className="hidden md:block w-60 border-r bg-background/80">
       {/* 上部：新規ボタン */}
