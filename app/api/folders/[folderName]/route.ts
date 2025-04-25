@@ -1,43 +1,43 @@
-import { auth } from "@clerk/nextjs/server";
-import { adminDb } from "@/lib/firebaseAdmin";
-import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";  // Clerk Auth
+import { adminDb } from "@/lib/firebaseAdmin";  // Firebase Admin SDK
+import { NextRequest, NextResponse } from "next/server";
 
 // DELETE /api/folders/[folderName]
-export async function DELETE(
-  _req: Request,
-  { params }: { params: { folderName: string } }
-) {
-  try {
-    const { userId } = await auth();
+export async function DELETE(request: NextRequest, { params }: { params: { folderName: string } }) {
+  const { folderName } = params;
 
+  try {
+    // Clerk で認証されたユーザーの userId を取得
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Firestore からの削除処理を実行
     const folderRef = adminDb
       .collection("users")
-      .doc(userId)
+      .doc(userId)  // userId は Clerk で取得した値
       .collection("folders")
-      .doc(params.folderName);
+      .doc(folderName);
 
-    // サブコレクション words を取得
-    const wordsSnapshot = await folderRef.collection("words").get();
-
-    // バッチで削除（全 words を削除）
+    // フォルダ内の単語データを削除
+    const wordSnapshot = await folderRef.collection("words").get();
     const batch = adminDb.batch();
-    wordsSnapshot.forEach((doc) => {
+
+    // 単語を削除
+    wordSnapshot.forEach(doc => {
       batch.delete(doc.ref);
     });
 
-    // フォルダ本体も削除
+    // フォルダを削除
     batch.delete(folderRef);
 
-    // 一括実行
+    // 一括削除をコミット
     await batch.commit();
 
-    return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    console.error("DELETE /api/folders/[folderName] error:", e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ message: "Folder deleted successfully" }, { status: 200 });
+  } catch (error) {
+    console.error("Failed to delete folder:", error);
+    return NextResponse.json({ error: "Failed to delete folder" }, { status: 500 });
   }
 }
