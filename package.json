@@ -55,6 +55,7 @@
     "firebase-admin": "^13.3.0",
     "framer-motion": "^11.0.8",
     "input-otp": "^1.2.4",
+    "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.446.0",
     "next": "^15.2.3",
     "next-themes": "^0.3.0",
@@ -72,5 +73,8 @@
     "typescript": "5.2.2",
     "vaul": "^0.9.9",
     "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/lodash.debounce": "^4.0.9"
   }
 }

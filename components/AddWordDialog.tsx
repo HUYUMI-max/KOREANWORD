@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   Dialog,
@@ -6,19 +6,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { useEffect, useState } from "react"
-import { addWordToFirestore } from "@/lib/firebase"
-import { useUser } from "@clerk/nextjs"
-
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { addWordToFolder } from "@/lib/actions/wordActions"; // API経由のみに統一
+import { useUser } from "@clerk/nextjs";
 
 interface AddWordDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSave: (korean: string, japanese: string) => void
-  list: string | null 
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (korean: string, japanese: string) => void; // ← 後で使わなくてもOKだけど今は置いておく
+  list: string | null;
 }
 
 export default function AddWordDialog({
@@ -27,83 +26,92 @@ export default function AddWordDialog({
   onSave,
   list,
 }: AddWordDialogProps) {
-  const [korean, setKorean] = useState("")
-  const [japanese, setJapanese] = useState("")
-  const [hasTranslated, setHasTranslated] = useState(false)
+  const [korean, setKorean] = useState("");
+  const [japanese, setJapanese] = useState("");
+  const [hasTranslated, setHasTranslated] = useState(false);
 
-  const { user } = useUser()
+  const { user } = useUser();
 
   const handleSave = async () => {
-    if (!list || (!korean.trim() && !japanese.trim())) return
+    if (!list || (!korean.trim() && !japanese.trim())) return;
 
     if (!user) {
-      console.error("ユーザーが未ログインです")
-      return
+      console.error("ユーザーが未ログインです");
+      return;
     }
 
     const newWord = {
       korean: korean.trim(),
       japanese: japanese.trim(),
-    }
+    };
 
     try {
-      await addWordToFirestore(user.id, list, newWord) // ✅ 修正ポイント
-      console.log("✅ Firestoreに保存完了")
+      await addWordToFolder(list, newWord);
+      console.log("API経由で保存完了");
 
-      setKorean("")
-      setJapanese("")
-      onOpenChange(false)
+      resetFields();
+      onOpenChange(false);
     } catch (error) {
-      console.error("❌ Firestore保存エラー:", error)
+      console.error("単語追加失敗:", error);
     }
-  }
-  
-  const translateText = async (text: string, sourceLang: string, targetLang: string): Promise<string> => {
-    return `（${targetLang}に翻訳）${text}`
-  }
+  };
 
-  // フォーカス時に一度だけ自動翻訳。再入力時は手動翻訳なので依存は不要
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleSaveAndContinue = async () => {
+    if (!list || (!korean.trim() && !japanese.trim())) return;
+
+    if (!user) {
+      console.error("ユーザーが未ログインです");
+      return;
+    }
+
+    const newWord = {
+      korean: korean.trim(),
+      japanese: japanese.trim(),
+    };
+
+    try {
+      await addWordToFolder(list, newWord);
+      console.log("API経由で保存完了 (連続追加)");
+
+      resetFields();
+    } catch (error) {
+      console.error("単語追加失敗 (連続追加):", error);
+    }
+  };
+
+  const translateText = async (text: string, sourceLang: string, targetLang: string): Promise<string> => {
+    return `（${targetLang}に翻訳）${text}`;
+  };
+
   useEffect(() => {
     if (korean && !japanese && !hasTranslated) {
       translateText(korean, "ko", "ja").then((result) => {
-        setJapanese(result)
-        setHasTranslated(true)
-      })
+        setJapanese(result);
+        setHasTranslated(true);
+      });
     }
-  }, [korean])
-
-  // フォーカス時に一度だけ自動翻訳。再入力時は手動翻訳なので依存は不要
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [korean]);
 
   useEffect(() => {
     if (japanese && !korean && !hasTranslated) {
       translateText(japanese, "ja", "ko").then((result) => {
-        setKorean(result)
-        setHasTranslated(true)
-      })
+        setKorean(result);
+        setHasTranslated(true);
+      });
     }
-  }, [japanese])
+  }, [japanese]);
 
   useEffect(() => {
     if (open) {
-      resetFields()
+      resetFields();
     }
-  }, [open])
+  }, [open]);
 
   const resetFields = () => {
-    setKorean("")
-    setJapanese("")
-    setHasTranslated(false)
-  }
-
-
-  const handleSaveAndContinue = () => {
-    if (korean.trim() && japanese.trim()) {
-      onSave(korean.trim(), japanese.trim())
-      resetFields()
-    }
-  }
+    setKorean("");
+    setJapanese("");
+    setHasTranslated(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -124,20 +132,14 @@ export default function AddWordDialog({
           />
         </div>
         <DialogFooter className="flex justify-between gap-2">
-          <Button
-            variant="outline"
-            onClick={handleSaveAndContinue}
-          >
+          <Button variant="outline" onClick={handleSaveAndContinue}>
             連続追加
           </Button>
-          <Button
-            className="bg-green-600 text-white"
-            onClick={handleSave}
-          >
+          <Button className="bg-green-600 text-white" onClick={handleSave}>
             保存して閉じる
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
