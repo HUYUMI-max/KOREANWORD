@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useAuth }  from "@clerk/nextjs"
 import useSWR from "swr"
 import { FolderOpen, Plus, Trash2 } from "lucide-react"
 
@@ -28,8 +29,17 @@ const fetcher: (url: string) => Promise<Folder[]> = (url) =>
   fetch(url).then((res) => res.json())
 
 export default function Sidebar({ onSelectLevel, onSelectList }: SidebarProps) {
-  const { data, error, mutate } = useSWR<Folder[]>("/api/folders", fetcher)
-  const folderList = Array.isArray(data) ? data : []
+  const { userId } = useAuth()
+
+  const swrKey = userId ? "/api/folders" : null;
+
+  const {
+    data   : folders = [],                            // ★ fallbackData=[]
+    error  ,
+    mutate ,
+  } = useSWR<Folder[]>(swrKey, fetcher, { fallbackData: [] })
+
+  const folderList = folders
   const [dialogOpen, setDialogOpen] = useState(false)
 
   const handleCreate = async (name: string) => {
