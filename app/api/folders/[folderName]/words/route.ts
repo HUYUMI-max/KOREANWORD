@@ -1,42 +1,61 @@
-import { auth } from "@clerk/nextjs/server"
-import { NextResponse } from "next/server"
-import { adminDb } from "@/lib/firebaseAdmin"
+// app/api/folders/[folderName]/words/route.ts
+import { auth } from "@clerk/nextjs/server";
+import { adminDb } from "@/lib/firebaseAdmin";
+import { NextRequest, NextResponse } from "next/server";
 
-/* -------- POST: 単語追加 -------- */
-export async function POST(
-  req: Request,
-  context: { params: { folderName: string } }
-) {
-  const { folderName } = await context.params   // ★ 必ず await
-  const { userId } = await auth()
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-
-  const { word } = await req.json()
-  const colRef = adminDb
-    .collection("users").doc(userId)
-    .collection("folders").doc(folderName)
-    .collection("words")
-
-  const doc = await colRef.add({ ...word, createdAt: new Date() })
-  await doc.update({ id: doc.id })
-  return NextResponse.json({ id: doc.id }, { status: 201 })
-}
-
-/* -------- GET: 単語一覧 -------- */
-export async function GET(
-  _req: Request,
-  context: { params: { folderName: string } }
-) {
-  const { folderName } = await context.params   // ★
-  const { userId }   = await auth()
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+/* GET: 特定フォルダの単語一覧を取得 */
+export async function GET(_req: Request, context: any) {
+  const { folderName } = context.params;
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json([], { status: 401 });
 
   const snap = await adminDb
-    .collection("users").doc(userId)
-    .collection("folders").doc(folderName)
+    .collection("users")
+    .doc(userId)
+    .collection("folders")
+    .doc(folderName)
     .collection("words")
     .orderBy("createdAt", "asc")
-    .get()
+    .get();
 
-  return NextResponse.json(snap.docs.map(d => d.data()))
+  const words = snap.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
+
+  return NextResponse.json(words);
+}
+
+
+/* POST: 単語をフォルダに追加 */
+export async function POST(req: NextRequest, context: any) {
+  const { folderName } = context.params;
+  const { userId } = await auth();
+
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { korean, japanese } = await req.json();
+
+  if (!korean || !japanese) {
+    return NextResponse.json({ error: "Invalid word data" }, { status: 400 });
+  }
+
+  const colRef = adminDb
+    .collection("users")
+    .doc(userId)
+    .collection("folders")
+    .doc(folderName)
+    .collection("words");
+
+  const docRef = await colRef.add({
+    korean,
+    japanese,
+    createdAt: new Date(),
+  });
+
+  await docRef.update({ id: docRef.id });
+
+  return NextResponse.json({ id: docRef.id }, { status: 201 });
 }

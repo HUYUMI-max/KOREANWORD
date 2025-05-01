@@ -56,8 +56,7 @@ export default function FlashcardArea({ level, list }: Props) {
   }, [level])
 
   /* ------------ SWR (list モード) ------------ */
-  const swrKey =
-    userId && list ? `/api/${userId}/folders/${encodeURIComponent(list)}/words` : null
+  const swrKey = list ? `/api/folders/${encodeURIComponent(list)}/words` : null
 
   const { data: words = [], mutate } = useSWR(
     swrKey,
@@ -67,8 +66,17 @@ export default function FlashcardArea({ level, list }: Props) {
 
   /* list が選択されているときだけ cards を置き換え */
   useEffect(() => {
-    if (list) { setCards(words); setIndex(0) }
-  }, [words, list])
+    if (list) {
+      const isSame =
+        cards.length === words.length &&
+        cards.every((c, i) => c.id === words[i]?.id);
+  
+      if (!isSame) {
+        setCards(words);
+        setIndex(0);
+      }
+    }
+  }, [words, list]);
 
   /* ------------ 検索フィルタを useMemo で派生させる ------------ */
   const filteredCards = useMemo(() => {

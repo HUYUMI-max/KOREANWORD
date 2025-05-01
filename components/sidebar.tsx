@@ -31,8 +31,7 @@ const fetcher: (url: string) => Promise<Folder[]> = (url) =>
 export default function Sidebar({ onSelectLevel, onSelectList }: SidebarProps) {
   const { userId } = useAuth()
 
-  const swrKey =
-    userId ? `/api/${userId}/folders` : null           // ★ uid 付きキー
+  const swrKey = userId ? "/api/folders" : null;
 
   const {
     data   : folders = [],                            // ★ fallbackData=[]
