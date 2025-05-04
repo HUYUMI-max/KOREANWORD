@@ -1,7 +1,7 @@
 
 "use client"
 
-import { Input } from "./ui/input"
+import { Input } from "../../ui/input"
 
 interface SearchBarProps {
   onSearch: (keyword: string) => void

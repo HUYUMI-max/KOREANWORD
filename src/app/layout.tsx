@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ClerkProvider, SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
-import { ThemeProvider } from '@/src/components/theme-provider';
-import Header from '@/src/components/header';
-import Footer from '@/src/components/footer';
+import { ThemeProvider } from '@/src/components/common/theme-provider';
+import Header from '@/src/components/layouts/header';
+import Footer from '@/src/components/layouts/footer';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });

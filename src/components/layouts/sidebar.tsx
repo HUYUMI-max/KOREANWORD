@@ -7,7 +7,7 @@ import { FolderOpen, Plus, Trash2 } from "lucide-react"
 
 import { Button } from "@/src/components/ui/button"
 import { ScrollArea, ScrollBar } from "@/src/components/ui/scroll-area"
-import NewVocabularyModal from "@/src/components/NewVocabularyModal"
+import NewVocabularyModal from "@/src/components/features/flashcard/NewVocabularyModal"
 
 import {
   createVocabularyFolder,

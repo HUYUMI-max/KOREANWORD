@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import Sidebar from "@/src/components/sidebar"
-import FlashcardArea from "@/src/components/flashcardArea"
+import Sidebar from "@/src/components/layouts/sidebar"
+import FlashcardArea from "@/src/components/features/flashcard/flashcardArea"
 
 export default function AppShell() {
   const [level, setLevel] = useState<"初心者" | "中級" | "上級" | null>(null)

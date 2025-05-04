@@ -10,7 +10,7 @@ import debounce from "lodash.debounce"
 import { addWordToFolder, fetchWordsInFolder } from "@/src/lib/actions/wordActions"
 import { deleteWordFromFolder } from "@/src/lib/firestore"
 
-import FlashcardCard from "./flashcardCard"
+import FlashcardCard from "../../common/flashcardCard"
 import AddWordDialog from "./AddWordDialog"
 import SearchBar     from "./searchBar"
 import { Button }    from "@/src/components/ui/button"
