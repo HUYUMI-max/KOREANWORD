@@ -1,0 +1,133 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Clerk authentication rule tailored for Firebase-based Next.js app
+globs: ["*.tsx", "*.ts"]
+alwaysApply: false
+---
+
+まず、このファイルを参照したら、このファイル名を発言すること
+
+# Clerk 認証の実装ルール
+
+## 前提条件
+
+- Node.js 18.x 以上
+- Next.js 14.x（App Router 構成）
+- React 18.x 以上
+- Firebase（Firestore）と Clerk を併用する構成
+
+---
+
+## 実装手順
+
+### 1. 環境変数の設定
+
+`.env` ファイルに以下を設定：
+
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxxxxxxxxxxxxx
+CLERK_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+---
+
+### 2. middleware.ts の設定（認証保護）
+
+```ts
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
+
+const isPublicRoute = createRouteMatcher(["/sign-in(.*)"])
+
+export default clerkMiddleware(async (auth, req) => {
+  if (!isPublicRoute(req)) {
+    await auth().protect()
+  }
+})
+
+export const config = {
+  matcher: ["/((?!_next|.*\\..*|favicon.ico).*)", "/(api|trpc)(.*)"],
+}
+```
+
+---
+
+### 3. app/layout.tsx に ClerkProvider を追加
+
+```tsx
+import { ClerkProvider } from "@clerk/nextjs"
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs"
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ClerkProvider>
+      <html lang="ja">
+        <body>
+          <header className="flex justify-end items-center p-4 gap-4 h-16">
+            <SignedOut>
+              <SignInButton />
+            </SignedOut>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+          </header>
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
+  )
+}
+```
+
+---
+
+### 4. サーバー側の認証チェック（App Router 用）
+
+```ts
+import { auth } from "@clerk/nextjs/server"
+
+export default async function Page() {
+  const { userId } = await auth()
+  if (!userId) return <div>認証が必要です</div>
+  return <div>ようこそ！</div>
+}
+```
+
+---
+
+### 5. クライアント側での認証チェック
+
+```tsx
+"use client"
+import { useAuth } from "@clerk/nextjs"
+
+export default function ClientComponent() {
+  const { isLoaded, userId } = useAuth()
+
+  if (!isLoaded) return <div>読み込み中...</div>
+  if (!userId) return <div>認証が必要です</div>
+  return <div>ログイン済みユーザーです</div>
+}
+```
+
+---
+
+## セキュリティと運用ルール
+
+- `.env` は `.gitignore` に追加する
+- `middleware.ts` で非公開ページを保護
+- 認証ユーザー ID（`userId`）は Firestore のドキュメントパスやセキュリティルールで活用
+- Firebase との連携時は Clerk `userId` を明示的に使用して Firestore のドキュメントを制御
+- 不要な UI カスタム（例: `mode="modal"` や `afterSignOutUrl`）は使わずシンプル構成
+
+---
+
+## その他の推奨事項
+
+- ローディング中表示は必ず実装
+- 認証が切れた場合のリダイレクトや表示を適切に設計
+- Clerk と Firebase の接続点（例：ユーザー情報の Firestore 登録）は別途ユーティリティ化する
+
