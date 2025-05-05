@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Card } from "@/src/components/ui/card"
 import { motion } from "framer-motion"
-import { Flashcard } from "@/src/lib/types"
+import { Flashcard } from "@/src/types/flashcard"
 import { Trash2 } from "lucide-react"
 
 /* ─────────────────────────────────────────

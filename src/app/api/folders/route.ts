@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { adminDb } from "@/src/lib/firebaseAdmin";
+import { adminDb } from "@/src/lib/firebase/admin";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {

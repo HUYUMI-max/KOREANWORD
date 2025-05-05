@@ -1,6 +1,6 @@
 // app/api/folders/[folderName]/words/route.ts
 import { auth } from "@clerk/nextjs/server";
-import { adminDb } from "@/src/lib/firebaseAdmin";
+import { adminDb } from "@/src/lib/firebase/admin";
 import { NextRequest, NextResponse } from "next/server";
 
 /* GET: 特定フォルダの単語一覧を取得 */

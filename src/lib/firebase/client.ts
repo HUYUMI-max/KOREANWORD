@@ -1,8 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, updateDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { firebaseConfig } from "../../config/firebaseConfig";
-import { Flashcard } from "@/src/lib/types";
+import { firebaseConfig } from "../../../config/firebaseConfig";
+import { Flashcard } from "@/src/types/flashcard";
 
 // Firebase 初期化（クライアント）
 const app = initializeApp(firebaseConfig);

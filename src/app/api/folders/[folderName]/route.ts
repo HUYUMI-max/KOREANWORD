@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { adminDb } from "@/src/lib/firebaseAdmin";
+import { adminDb } from "@/src/lib/firebase/admin";
 import { NextRequest, NextResponse } from "next/server";
 
 // Admin SDK を使うので Node.js ランタイムを明示

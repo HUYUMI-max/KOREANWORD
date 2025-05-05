@@ -1,7 +1,7 @@
 // lib/firestore.ts
 // Clerk は import せず、userId は必ず引数でもらう設計に統一
 
-import { db } from "@/src/lib/firebase";
+import { db } from "@/src/lib/firebase/client";
 import {
   doc,
   setDoc,

@@ -25,7 +25,7 @@ import {
   AlertDialogCancel, AlertDialogAction,
 } from "@/src/components/ui/alert-dialog"
 
-import { Flashcard } from "@/src/lib/types"
+import { Flashcard } from "@/src/types/flashcard"
 
 type Props = {
   level: "初心者" | "中級" | "上級" | null
