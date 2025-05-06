@@ -1,0 +1,106 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Tech‑stack overview for “Next.js 14 + Firebase + Clerk” portfolio project  
+globs:
+  - "src/**/*.{ts,tsx}"
+alwaysApply: true
+---
+まず、このファイルを参照したら**このファイル名（techstack.mdc）**を発言すること
+
+# 技術スタック
+
+## フロントエンド
+
+### コア
+| ライブラリ | バージョン | 用途 |
+|------------|-----------|------|
+| **Next.js** | 14.2.x | App Router（Server / Client Components, ISR 等） |
+| **React** | 18.x | UI ライブラリ |
+| **TypeScript** | 5.x | 型安全 |
+
+### UI & スタイル
+| ライブラリ | 備考 |
+|------------|------|
+| **shadcn/ui** | 基本 UI コンポーネント（Button, Card, Dialog…） |
+| **Tailwind CSS** v3 | ユーティリティファースト CSS |
+| tailwind‑merge / tailwindcss‑animate | クラス競合解決 / アニメーション |
+| **Radix UI Primitives** | アクセシブルなヘッドレス UI |
+| **Lucide‑react** | アイコンセット |
+
+### 認証
+| ライブラリ | 備考 |
+|------------|------|
+| **Clerk** v6 | 認証・ユーザー/セッション管理（<SignInButton/>, middleware で保護） |
+
+---
+
+## バックエンド & データ
+
+| サービス / SDK | バージョン | 用途 |
+|----------------|-----------|------|
+| **Firebase** | ^10.x | クライアント側 SDK（Firestore, Auth） |
+| **firebase‑admin** | ^12.x | **Server Component / API Route** からの安全なデータ読み書き |
+| **Firestore** | NoSQL データベース（`users/{uid}/folders/*/words/*` 構造） |
+
+※ Prisma / SQL は **使用しない**。すべて Firestore で管理。
+
+---
+
+## バリデーション & フォーム
+
+| ライブラリ | 用途 |
+|------------|------|
+| **Zod** v3 | 型安全な入力スキーマ（クライアント・サーバーで共有） |
+| (任意) react‑hook‑form | 複雑なフォームが必要になった場合に採用可 |
+
+---
+
+## ユーティリティ
+
+| ライブラリ | 用途 |
+|------------|------|
+| **date‑fns** | 日付操作 |
+| **lodash.debounce** | 入力デバウンス（検索など） |
+
+---
+
+## 開発体験
+
+| ツール | 備考 |
+|--------|------|
+| **ESLint** + `@typescript-eslint` | コード品質 |
+| **Prettier** | コードフォーマット |
+| **pnpm** | パッケージマネージャ |
+| **Husky / lint‑staged** | commit 前チェック（lint / type‑check） |
+
+---
+
+## デプロイ & CI/CD
+
+| サービス | 設定 |
+|----------|------|
+| **Vercel** | GitHub PR ごとに Preview 環境を自動生成 |
+| **GitHub Actions** (または Vercel CI) | `pnpm lint && pnpm build` が成功しないとマージ・本番デプロイ不可 |
+| `vercel env pull .env.local` | ローカルとクラウドの環境変数同期 |
+
+---
+
+## パフォーマンス & モニタリング
+
+- `next/image` で画像最適化  
+- `fetch()` + `next: { revalidate }` で ISR / キャッシュ制御  
+- Core Web Vitals を **Vercel Analytics / PageSpeed Insights / Lighthouse** で定期確認  
+- Client Component は最小限。`useMemo` / `useCallback` を徹底
+
+---
+
+## 重要ポイント
+
+1. **UI/UX の変更** — 事前承認必須  
+2. **主要ライブラリのバージョン変更** — 提案 → 承認 → 検証 → 適用  
+3. **メジャーアップデート** — Preview または Staging で必ず動作確認  
+4. 障害・トラブル時は **状況報告 → 暫定対応 → 恒久策** を速やかに共有

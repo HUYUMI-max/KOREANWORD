@@ -19,7 +19,11 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@firebase/*": ["./src/lib/firebase/*"],
+      "@actions/*":  ["./src/lib/actions/*"],
+      "@utils/*":    ["./src/lib/utils/*"],
+      "@types/*":    ["./src/types/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
