@@ -13,7 +13,7 @@ export const addWordToFolder = async (
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",          // Clerk セッション Cookie を送る
-      body: JSON.stringify({ word }),
+      body: JSON.stringify({ korean: word.korean, japanese: word.japanese }),
     }
   )
 
