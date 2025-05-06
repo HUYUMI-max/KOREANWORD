@@ -4,7 +4,11 @@ import { useState } from "react"
 import Sidebar from "@/src/components/layouts/sidebar"
 import FlashcardArea from "@/src/components/features/flashcard/flashcardArea"
 
-export default function AppShell() {
+export interface AppShellProps {
+  children?: React.ReactNode;   // ← ★ 追加
+}
+
+export default function AppShell({ children }: AppShellProps) {
   const [level, setLevel] = useState<"初心者" | "中級" | "上級" | null>(null)
   const [list, setList] = useState<string | null>(null) // マイ単語帳の選択状態を管理
 

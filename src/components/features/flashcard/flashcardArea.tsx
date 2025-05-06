@@ -8,7 +8,7 @@ import useSWR from "swr"
 import debounce from "lodash.debounce"
 
 import { addWordToFolder, fetchWordsInFolder } from "@/src/lib/actions/wordActions"
-import { deleteWordFromFolder } from "@/src/lib/firestore"
+import { deleteWordFromFolder } from "@/src/lib/actions/firestore"
 
 import FlashcardCard from "../../common/flashcardCard"
 import AddWordDialog from "./AddWordDialog"

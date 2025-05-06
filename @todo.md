@@ -21,3 +21,11 @@
 - セキュリティ面での考慮が必要
 - ユーザビリティの向上に注力
 - パフォーマンスの最適化を意識
+
+GET使ってるファイル
+src\app\api\folders\route.ts
+src\app\api\folders\[folderName]\words\route.ts
+
+sidebarのfetchで使っている？　クライアント
+wordActions.tsで使っている？　クライアント
+folderAction.tsで使っている？　クライアント
