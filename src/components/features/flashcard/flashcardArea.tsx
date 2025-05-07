@@ -124,7 +124,11 @@ export default function FlashcardArea({ level, list }: Props) {
   /* ------------ ナビゲーション ------------ */
   const next = () => { setDir("next"); setIndex(i => (i + 1) % filteredCards.length) }
   const prev = () => { setDir("prev"); setIndex(i => (i - 1 + filteredCards.length) % filteredCards.length) }
-  const shuffle = () => { setIndex(0); /* filteredCards を直接シャッフル */ }
+  const shuffle = () => {
+    setIndex(0);
+    setCards((prev) => [...prev].sort(() => Math.random() - 0.5));
+  };
+
 
   /* ------------ 検索ハンドラ（debounce） ------------ */
   // 依存を空にすることで関数は 1 度だけ生成

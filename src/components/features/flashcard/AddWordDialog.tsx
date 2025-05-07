@@ -29,6 +29,8 @@ export default function AddWordDialog({
   const [korean, setKorean] = useState("");
   const [japanese, setJapanese] = useState("");
   const [hasTranslated, setHasTranslated] = useState(false);
+  const [index, setIndex] = useState(0);
+  const [cards, setCards] = useState([]);
 
   const { user } = useUser();
 
@@ -112,6 +114,7 @@ export default function AddWordDialog({
     setJapanese("");
     setHasTranslated(false);
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
