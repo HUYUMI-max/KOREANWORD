@@ -39,14 +39,17 @@ export const deleteWordFromFolder = async (
   folderName: string,
   wordId: string
 ) => {
-  const wordRef = doc(
-    db,
-    "users",
-    userId,
-    "folders",
-    folderName,
-    "words",
-    wordId
+  const res = await fetch(
+    `/api/folders/${encodeURIComponent(folderName)}/words/${encodeURIComponent(wordId)}`,
+    {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    }
   );
-  await deleteDoc(wordRef);
+  if (!res.ok) {
+    const msg = await res.text();
+    console.error("DELETE WORD ERROR:", msg);
+    throw new Error("Failed to delete word");
+  }
 };

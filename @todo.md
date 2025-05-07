@@ -22,10 +22,18 @@
 - ユーザビリティの向上に注力
 - パフォーマンスの最適化を意識
 
+単語の追加機能の修正
+単語の削除機能の修正
+シャッフル機能の実装
+お気に入り機能の追加
+
+
+
+
 GET使ってるファイル
 src\app\api\folders\route.ts
 src\app\api\folders\[folderName]\words\route.ts
 
-sidebarのfetchで使っている？　クライアント
+sidebarで使っている？　クライアント
 wordActions.tsで使っている？　クライアント
 folderAction.tsで使っている？　クライアント
