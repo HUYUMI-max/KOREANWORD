@@ -8,7 +8,7 @@ import { Trash2 } from "lucide-react"
 
 /* ─────────────────────────────────────────
    props ―★ isFavorite / onToggleFavorite は
-           “お気に入り機能” を使う時だけ渡せば OK
+           "お気に入り機能" を使う時だけ渡せば OK
 ────────────────────────────────────────── */
 interface FlashcardCardProps {
   card: Flashcard
@@ -43,14 +43,14 @@ export default function FlashcardCard({
             e.preventDefault()
             onToggleFavorite()
           }}
-          className="absolute top-2 right-2 z-10"
+          className="absolute top-2 right-2 z-10 text-2xl text-yellow-500 hover:text-yellow-600 transition-colors"
           aria-label="お気に入り切替"
         >
           {isFavorite ? "★" : "☆"}
         </button>
       )}
 
-      {/* 🗑️ 削除ボタン */}
+      {/* 削除ボタン */}
       <button
         className="absolute top-2 right-10 text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition-colors"
         onClick={(e) => {

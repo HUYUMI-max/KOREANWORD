@@ -36,7 +36,7 @@ export async function POST(req: NextRequest, context: any) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { korean, japanese } = await req.json();
+  const { korean, japanese, isFavorite = false } = await req.json();
 
   if (!korean || !japanese) {
     return NextResponse.json({ error: "Invalid word data" }, { status: 400 });
@@ -52,6 +52,7 @@ export async function POST(req: NextRequest, context: any) {
   const docRef = await colRef.add({
     korean,
     japanese,
+    isFavorite,
     createdAt: new Date(),
   });
 
