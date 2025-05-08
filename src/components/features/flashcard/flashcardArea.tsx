@@ -42,14 +42,21 @@ export default function FlashcardArea({ level, list }: Props) {
   const [dir    , setDir    ] = useState<"next"|"prev">("next")
   const [openShuffle , setOpenShuffle ] = useState(false)
   const [openAdd, setOpenAdd]       = useState(false)
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+  const [selected, setSelected] = useState<Flashcard | null>(null)
 
   /* ------------ レベル別プリセット ------------ */
   useEffect(() => {
     if (!level) return            // list モードのときは読み込まない
     ;(async () => {
       const json = await fetch("/data/VocabularyAll.json").then(r => r.json())
+      // localStorageからお気に入り状態を取得
+      const favorites = JSON.parse(localStorage.getItem(`favorites-${level}`) || '{}')
       const arr : Flashcard[] = json[level].map((v: any) => ({
-        id:String(v.id), korean:v.korean, japanese:v.japanese,
+        id: String(v.id),
+        korean: v.korean,
+        japanese: v.japanese,
+        isFavorite: favorites[v.id] || false
       }))
       setCards(arr); setIndex(0)
     })()
@@ -61,7 +68,12 @@ export default function FlashcardArea({ level, list }: Props) {
   const { data: words = [], mutate } = useSWR(
     swrKey,
     () => fetchWordsInFolder(list!),   // list !== null のときだけ
-    { fallbackData: [] }
+    { 
+      fallbackData: [],
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 2000
+    }
   )
 
   /* list が選択されているときだけ cards を置き換え */
@@ -79,12 +91,9 @@ export default function FlashcardArea({ level, list }: Props) {
   }, [words, list]);
 
   /* ------------ 検索フィルタを useMemo で派生させる ------------ */
-  const filteredCards = useMemo(() => {
-    if (!keyword) return cards
-    return cards.filter(c =>
-      c.korean?.includes(keyword) || c.japanese?.includes(keyword)
-    )
-  }, [cards, keyword])
+  const filteredCards = showFavoritesOnly 
+    ? cards.filter(card => card.isFavorite)
+    : cards
 
   /* index が範囲外にならないよう補正 */
   useEffect(() => {
@@ -121,6 +130,78 @@ export default function FlashcardArea({ level, list }: Props) {
     }
   }
 
+  /* ------------ お気に入り ------------ */
+  const handleToggleFavorite = async (wordId: string, currentFavorite: boolean) => {
+    if (level) {
+      // レベルモードの場合、ローカルの状態を更新
+      setCards(prev => prev.map(card => 
+        card.id === wordId 
+          ? { ...card, isFavorite: !currentFavorite }
+          : card
+      ));
+      // localStorageに保存
+      const favorites = JSON.parse(localStorage.getItem(`favorites-${level}`) || '{}')
+      favorites[wordId] = !currentFavorite
+      localStorage.setItem(`favorites-${level}`, JSON.stringify(favorites))
+      return;
+    }
+
+    if (!list) return;
+    try {
+      // 現在の単語の位置を保存
+      const currentIndex = index;
+      const newFavoriteState = !currentFavorite;
+      
+      // 1. 即時の楽観的更新
+      mutate(
+        (prev: Flashcard[] = []) => 
+          prev.map(card => 
+            card.id === wordId 
+              ? { ...card, isFavorite: newFavoriteState }
+              : card
+          ),
+        false
+      );
+
+      // 2. APIリクエスト
+      const response = await fetch(
+        `/api/folders/${encodeURIComponent(list)}/words/${encodeURIComponent(wordId)}/favorite`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isFavorite: newFavoriteState }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to update favorite status');
+      }
+
+      // 3. 強制的な再検証
+      await mutate(undefined, { revalidate: true });
+      
+      // 4. 状態の強制更新（インデックスを維持）
+      setCards(prev => {
+        const newCards = prev.map(card => 
+          card.id === wordId 
+            ? { ...card, isFavorite: newFavoriteState }
+            : card
+        );
+        // 現在の単語の位置を維持
+        const currentCard = newCards[currentIndex];
+        if (currentCard) {
+          setIndex(currentIndex);
+        }
+        return newCards;
+      });
+    } catch (e) {
+      console.error("お気に入り更新失敗:", e);
+      alert("お気に入りの更新に失敗しました");
+      // エラー時は元の状態に戻す
+      mutate();
+    }
+  };
+
   /* ------------ ナビゲーション ------------ */
   const next = () => { setDir("next"); setIndex(i => (i + 1) % filteredCards.length) }
   const prev = () => { setDir("prev"); setIndex(i => (i - 1 + filteredCards.length) % filteredCards.length) }
@@ -138,7 +219,7 @@ export default function FlashcardArea({ level, list }: Props) {
   )
 
   /* ------------ JSX ------------ */
-  const selected = filteredCards[index] ?? null
+  const selectedCard = filteredCards[index] ?? null
   const variants = {
     enter :(d:"next"|"prev") => ({ opacity:0, x:d==="next"? 100:-100 }),
     center:                   { opacity:1, x:0 },
@@ -162,16 +243,28 @@ export default function FlashcardArea({ level, list }: Props) {
         </DropdownMenu>
       </div>
 
+      {/* --- お気に入りフィルターボタン --- */}
+      <button
+        onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+        className={`px-4 py-2 rounded-full transition-colors ${
+          showFavoritesOnly 
+            ? 'bg-yellow-500 text-white hover:bg-yellow-600' 
+            : 'bg-gray-100 hover:bg-gray-200'
+        }`}
+      >
+        {showFavoritesOnly ? '★ お気に入り表示中' : '☆ すべて表示'}
+      </button>
+
       {/* --- カード --- */}
       <div className="flex items-center gap-4 mb-8">
         <Button variant="outline" size="icon" disabled={filteredCards.length<=1} onClick={prev}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
 
-        {selected && (
+        {selectedCard && (
           <AnimatePresence mode="wait" custom={dir}>
             <motion.div
-              key={selected.id}
+              key={selectedCard.id}
               custom={dir}
               variants={variants}
               initial="enter"
@@ -181,9 +274,10 @@ export default function FlashcardArea({ level, list }: Props) {
               className="perspective-1000"
             >
               <FlashcardCard
-                card={selected}
+                card={selectedCard}
                 onDelete={handleDeleteWord}
-                /* isFavorite / onToggleFavorite は未使用なので渡さない */
+                isFavorite={selectedCard.isFavorite ?? false}
+                onToggleFavorite={() => selectedCard && handleToggleFavorite(selectedCard.id, selectedCard.isFavorite ?? false)}
               />
             </motion.div>
           </AnimatePresence>
