@@ -179,3 +179,166 @@ folderAction.tsで使っている？　クライアント
 3. 型安全性の向上
    - APIエンドポイントの型定義の改善
    - より型安全な実装への移行
+
+## 状態管理の根本的な見直し計画
+
+### 現状の問題点
+1. 状態の同期問題
+   - お気に入り状態変更時に位置がリセットされる
+   - シャッフル状態が保持されない
+   - 状態更新の順序による一時的な表示問題
+
+2. 状態管理の複雑さ
+   - 複数の状態（cards, index, shuffle, favorite）が相互に影響
+   - 状態更新のタイミングが適切に制御されていない
+   - 楽観的UI更新と実際のデータ更新の同期が不完全
+
+### 改善計画
+
+#### 1. 状態の整理と統合
+- [ ] 状態の一元管理
+  ```typescript
+  type FlashcardState = {
+    cards: Flashcard[]
+    currentIndex: number
+    isShuffled: boolean
+    originalOrder: number[]  // シャッフル前の順序を保持
+  }
+  ```
+- [ ] 状態更新の統一インターフェース
+  ```typescript
+  type StateAction = 
+    | { type: 'TOGGLE_FAVORITE'; wordId: string }
+    | { type: 'SHUFFLE' }
+    | { type: 'RESET_ORDER' }
+    | { type: 'SET_INDEX'; index: number }
+  ```
+
+#### 2. シャッフル状態の保持
+- [ ] シャッフル状態の永続化
+  - シャッフル時の順序マッピングを保持
+  - 状態更新時に順序マッピングを維持
+- [ ] シャッフル状態の復元機能
+  - ページリロード時もシャッフル状態を維持
+  - お気に入り状態変更時もシャッフル状態を保持
+
+#### 3. 状態更新の最適化
+- [ ] 更新の順序制御
+  ```typescript
+  async function handleStateUpdate(action: StateAction) {
+    // 1. 楽観的UI更新
+    const optimisticState = updateStateOptimistically(state, action)
+    setState(optimisticState)
+
+    try {
+      // 2. バックエンド更新
+      await updateBackend(action)
+      
+      // 3. 状態の確定
+      setState(prev => ({
+        ...prev,
+        isUpdating: false
+      }))
+    } catch (error) {
+      // 4. エラー時の状態復元
+      setState(prev => ({
+        ...prev,
+        ...state,
+        isUpdating: false
+      }))
+    }
+  }
+  ```
+
+#### 4. インデックス管理の改善
+- [ ] インデックスの永続化
+  - 現在のインデックスを状態の一部として管理
+  - 状態更新時にインデックスを維持
+- [ ] インデックスの検証
+  - 範囲外のインデックスを自動補正
+  - フィルター適用時のインデックス調整
+
+### 実装ステップ
+1. 状態管理のリファクタリング
+   - [ ] 新しい状態型の定義
+   - [ ] 状態更新ロジックの実装
+   - [ ] 既存コードの移行
+
+2. シャッフル機能の改善
+   - [ ] 順序マッピングの実装
+   - [ ] シャッフル状態の永続化
+   - [ ] 状態更新時の順序維持
+
+3. お気に入り機能の改善
+   - [ ] 状態更新の最適化
+   - [ ] エラーハンドリングの強化
+   - [ ] UIの改善
+
+### 期待される効果
+1. 状態の一貫性向上
+   - お気に入り状態変更時の位置維持
+   - シャッフル状態の保持
+   - 表示の安定性向上
+
+2. パフォーマンスの改善
+   - 不要な再レンダリングの削減
+   - 状態更新の効率化
+   - メモリ使用量の最適化
+
+3. コードの保守性向上
+   - 状態管理の一元化
+   - 型安全性の向上
+   - テストのしやすさ
+
+## お気に入り機能の問題追跡（追加記録）
+
+### 新たな・継続中の問題
+- [ ] 2番目以降のカードをお気に入りにすると1番目に戻る
+- [ ] シャッフル状態でお気に入りを押すとエラーは出ないが、シャッフルが解除される
+
+### 考えられる原因
+- currentIndexの復元ロジックが不十分（カード配列の再構築時にインデックスが正しく再計算されていない）
+- safeShuffledCardsやupdatedWordsの内容とshuffledIndicesの整合性が崩れている
+- SET_CARDSアクションでcurrentIndexが常に0にリセットされているため、dispatch({ type: 'SET_INDEX', ... })が意図通りに動作していない可能性
+- シャッフル状態の維持ロジックが不完全（shuffledIndicesやisShuffledの再設定が抜けている）
+
+### やってダメだったこと
+- SET_CARDSでcurrentIndexを0にリセットし、後からSET_INDEXで復元しようとしたが、状態の競合や非同期のタイミングでうまくいかない
+- mutateの戻り値やstate.cardsの内容を使ってfindIndexで復元しようとしたが、配列の内容が変化しているため正しいインデックスが得られない場合がある
+- safeShuffledCardsやupdatedWordsのfilter/mapでundefinedを除外した結果、インデックスがずれることがある
+
+### 今後の方針
+- SET_CARDSアクションでcurrentIndexを0にリセットしないようにし、dispatch({ type: 'SET_INDEX', ... })で正しいインデックスを必ずセットする
+- シャッフル状態の維持には、cards・shuffledIndices・isShuffledを一貫して管理する
+- SET_CARDSアクションにcurrentIndexを渡せるようにする、またはSET_CARDSとSET_INDEXをまとめて1つのアクションで管理する
+- 状態更新の順序と非同期処理のタイミングを見直す
+
+### 直近の修正内容と結果（2024-05-09）
+- SET_CARDSアクションを拡張し、cards・currentIndex・isShuffled・shuffledIndicesを一括で管理するように修正
+- お気に入り更新時も、シャッフル状態やインデックスが崩れないように一括でdispatchするよう変更
+- → どちらの問題（1番目に戻る／シャッフル解除）も解消せず、現象は継続
+
+### 新たな気づき・やってダメだったこと（2024-05-09追記）
+- お気に入り更新時の状態一括更新は正しく動作しているが、「シャッフル解除」や「元の順番」アクションでcurrentIndexが0にリセットされるため、1枚目に戻る現象が発生している。
+- シャッフル解除時にも、現在表示中のカードIDを基準に新しい配列でのインデックスを再計算してcurrentIndexをセットする必要がある。
+
+### 次の修正方針
+- 「シャッフル解除」や「元の順番」アクション時も、現在表示中のカードIDを基準にcurrentIndexを再計算してdispatchする。
+- これにより、「1枚目に戻る」現象を根本的に解消できる見込み。
+
+### やってダメだったこと（2024-05-09追加）
+- お気に入り更新時にcurrentIndexやisShuffled, shuffledIndicesを一括で管理しても、SWRの再検証やstateの参照タイミングのズレで状態が維持できない。
+- handleToggleFavorite内でstateの値を参照しても、非同期処理やreducerのバッチ処理の影響で意図通りの値が使えない場合がある。
+- SET_CARDSアクションの拡張だけでは根本解決にならない。
+
+### 次の調査・修正方針
+- お気に入り更新直後のSWR mutate/再検証の影響を最小化する。
+- mutate後のcards配列・シャッフル状態・currentIndexを「必ず最新の値で」再計算する。
+- stateの値を常に最新で参照するため、useRefでcurrentCardIdやisShuffledを保持し、dispatch時にそれを使う。
+- お気に入り更新時のstate更新を「1アクションで」完結させ、SWRの再検証後も同じカード・同じシャッフル状態を維持する。
+
+### 新たな調査・修正方針（2024-05-09追記）
+- mutate後の配列をUI順に並び替えても解決しない場合、Firestore/SWRのデータ取得タイミングやキャッシュの問題が根本原因の可能性が高い。
+- お気に入り更新APIのレスポンスで「更新後の全単語リスト」を返し、そのままUIに反映する方式を試す。
+- SWRのキャッシュ設定（fallbackData, dedupingInterval等）も一時的に外し、キャッシュの影響を排除する。
+- cursorルール（dev-rules/nextjs, global, techstack.mdc, db-blueprint等）を厳守し、API設計・型安全・バリデーション・認証も徹底する。
