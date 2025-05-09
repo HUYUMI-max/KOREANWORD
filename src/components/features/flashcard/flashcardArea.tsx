@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState, useReducer, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useAuth } from "@clerk/nextjs"
@@ -32,33 +32,119 @@ type Props = {
   list : string | null
 }
 
+/* ------------ 状態の型定義 ------------ */
+type FlashcardState = {
+  cards: Flashcard[]
+  currentIndex: number
+  isShuffled: boolean
+  originalOrder: number[]  // シャッフル前の順序を保持
+  isUpdating: boolean
+  shuffledIndices: number[] // シャッフル時の順序を保持
+}
+
+type StateAction = 
+  | { type: 'TOGGLE_FAVORITE'; wordId: string; isFavorite: boolean }
+  | { type: 'SHUFFLE' }
+  | { type: 'RESET_ORDER' }
+  | { type: 'SET_INDEX'; index: number }
+  | { type: 'SET_CARDS'; cards: Flashcard[]; currentIndex?: number; isShuffled?: boolean; shuffledIndices?: number[] }
+  | { type: 'SET_UPDATING'; isUpdating: boolean }
+
+/* ------------ 状態更新関数 ------------ */
+function flashcardReducer(state: FlashcardState, action: StateAction): FlashcardState {
+  switch (action.type) {
+    case 'TOGGLE_FAVORITE':
+      return {
+        ...state,
+        cards: state.cards.map(card =>
+          card.id === action.wordId
+            ? { ...card, isFavorite: action.isFavorite }
+            : card
+        ),
+        // シャッフル状態を維持
+        ...(state.isShuffled && {
+          shuffledIndices: state.shuffledIndices
+        })
+      }
+    case 'SHUFFLE':
+      const shuffledIndices = Array.from({ length: state.cards.length }, (_, i) => i)
+        .sort(() => Math.random() - 0.5)
+      return {
+        ...state,
+        cards: shuffledIndices.map(i => state.cards[i]),
+        originalOrder: state.cards.map((_, i) => i),
+        isShuffled: true,
+        shuffledIndices
+      }
+    case 'RESET_ORDER':
+      return {
+        ...state,
+        cards: state.originalOrder.map(i => state.cards[i]),
+        isShuffled: false,
+        shuffledIndices: []
+      }
+    case 'SET_INDEX':
+      return {
+        ...state,
+        currentIndex: action.index
+      }
+    case 'SET_CARDS':
+      return {
+        ...state,
+        cards: action.cards ?? [],
+        currentIndex: typeof action.currentIndex === 'number' ? action.currentIndex : state.currentIndex,
+        isShuffled: typeof action.isShuffled === 'boolean' ? action.isShuffled : state.isShuffled,
+        originalOrder: action.cards ? action.cards.map((_, i) => i) : state.originalOrder,
+        shuffledIndices: action.shuffledIndices ?? state.shuffledIndices,
+      }
+    case 'SET_UPDATING':
+      return {
+        ...state,
+        isUpdating: action.isUpdating
+      }
+    default:
+      return state
+  }
+}
+
 export default function FlashcardArea({ level, list }: Props) {
   const { userId } = useAuth()
 
-  /* ------------ 原データ ------------ */
-  const [cards , setCards ] = useState<Flashcard[]>([])
+  /* ------------ 状態管理 ------------ */
+  const [state, dispatch] = useReducer(flashcardReducer, {
+    cards: [],
+    currentIndex: 0,
+    isShuffled: false,
+    originalOrder: [],
+    isUpdating: false,
+    shuffledIndices: []
+  })
+
+  // --- 追加: 現在のカードIDとシャッフル状態をuseRefで保持 ---
+  const currentCardIdRef = useRef<string | undefined>(undefined)
+  const isShuffledRef = useRef<boolean>(false)
+  const shuffledIndicesRef = useRef<number[]>([])
+
   const [keyword, setKeyword] = useState("")
-  const [index  , setIndex  ] = useState(0)
-  const [dir    , setDir    ] = useState<"next"|"prev">("next")
-  const [openShuffle , setOpenShuffle ] = useState(false)
-  const [openAdd, setOpenAdd]       = useState(false)
+  const [dir, setDir] = useState<"next"|"prev">("next")
+  const [openShuffle, setOpenShuffle] = useState(false)
+  const [openAdd, setOpenAdd] = useState(false)
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const [selected, setSelected] = useState<Flashcard | null>(null)
 
   /* ------------ レベル別プリセット ------------ */
   useEffect(() => {
-    if (!level) return            // list モードのときは読み込まない
+    if (!level) return
     ;(async () => {
       const json = await fetch("/data/VocabularyAll.json").then(r => r.json())
-      // localStorageからお気に入り状態を取得
       const favorites = JSON.parse(localStorage.getItem(`favorites-${level}`) || '{}')
-      const arr : Flashcard[] = json[level].map((v: any) => ({
+      const arr: Flashcard[] = json[level].map((v: any) => ({
         id: String(v.id),
         korean: v.korean,
         japanese: v.japanese,
         isFavorite: favorites[v.id] || false
       }))
-      setCards(arr); setIndex(0)
+      dispatch({ type: 'SET_CARDS', cards: arr })
     })()
   }, [level])
 
@@ -67,7 +153,7 @@ export default function FlashcardArea({ level, list }: Props) {
 
   const { data: words = [], mutate } = useSWR(
     swrKey,
-    () => fetchWordsInFolder(list!),   // list !== null のときだけ
+    () => fetchWordsInFolder(list!),
     { 
       fallbackData: [],
       revalidateOnFocus: true,
@@ -76,29 +162,32 @@ export default function FlashcardArea({ level, list }: Props) {
     }
   )
 
-  /* list が選択されているときだけ cards を置き換え */
   useEffect(() => {
     if (list) {
       const isSame =
-        cards.length === words.length &&
-        cards.every((c, i) => c.id === words[i]?.id);
+        state.cards.length === words.length &&
+        state.cards.every((c, i) => c.id === words[i]?.id)
   
       if (!isSame) {
-        setCards(words);
-        setIndex(0);
+        dispatch({ type: 'SET_CARDS', cards: words })
       }
     }
-  }, [words, list]);
+  }, [words, list])
 
   /* ------------ 検索フィルタを useMemo で派生させる ------------ */
-  const filteredCards = showFavoritesOnly 
-    ? cards.filter(card => card.isFavorite)
-    : cards
+  const filteredCards = useMemo(() => 
+    showFavoritesOnly 
+      ? state.cards.filter(card => card.isFavorite)
+      : state.cards,
+    [state.cards, showFavoritesOnly]
+  )
 
   /* index が範囲外にならないよう補正 */
   useEffect(() => {
-    if (index >= filteredCards.length) setIndex(0)
-  }, [filteredCards.length, index])
+    if (state.currentIndex >= filteredCards.length) {
+      dispatch({ type: 'SET_INDEX', index: 0 })
+    }
+  }, [filteredCards.length, state.currentIndex])
 
   /* ------------ CRUD ------------ */
   const handleSaveWord = async (ko: string, ja: string) => {
@@ -134,34 +223,41 @@ export default function FlashcardArea({ level, list }: Props) {
   const handleToggleFavorite = async (wordId: string, currentFavorite: boolean) => {
     if (level) {
       // レベルモードの場合、ローカルの状態を更新
-      setCards(prev => prev.map(card => 
-        card.id === wordId 
-          ? { ...card, isFavorite: !currentFavorite }
-          : card
-      ));
+      dispatch({ type: 'TOGGLE_FAVORITE', wordId, isFavorite: !currentFavorite })
       // localStorageに保存
       const favorites = JSON.parse(localStorage.getItem(`favorites-${level}`) || '{}')
       favorites[wordId] = !currentFavorite
       localStorage.setItem(`favorites-${level}`, JSON.stringify(favorites))
-      return;
+      return
     }
 
-    if (!list) return;
+    if (!list) return
+
     try {
-      // 現在の単語の位置を保存
-      const currentIndex = index;
-      const newFavoriteState = !currentFavorite;
-      
-      // 1. 即時の楽観的更新
-      mutate(
-        (prev: Flashcard[] = []) => 
-          prev.map(card => 
-            card.id === wordId 
-              ? { ...card, isFavorite: newFavoriteState }
-              : card
-          ),
-        false
-      );
+      dispatch({ type: 'SET_UPDATING', isUpdating: true })
+      const newFavoriteState = !currentFavorite
+      // --- 追加: 現在のカードIDとシャッフル状態をrefに保存 ---
+      currentCardIdRef.current = state.cards[state.currentIndex]?.id
+      isShuffledRef.current = state.isShuffled
+      shuffledIndicesRef.current = state.shuffledIndices
+
+      // デバッグログ: 楽観的UI更新前
+      console.log('[お気に入り] 楽観的UI前', {
+        cards: state.cards,
+        shuffledIndices: state.shuffledIndices,
+        currentIndex: state.currentIndex,
+        isShuffled: state.isShuffled
+      })
+      // 1. 楽観的UI更新（シャッフル状態を維持）
+      dispatch({ type: 'TOGGLE_FAVORITE', wordId, isFavorite: newFavoriteState })
+
+      // デバッグログ: APIリクエスト前
+      console.log('[お気に入り] APIリクエスト前', {
+        cards: state.cards,
+        shuffledIndices: state.shuffledIndices,
+        currentIndex: state.currentIndex,
+        isShuffled: state.isShuffled
+      })
 
       // 2. APIリクエスト
       const response = await fetch(
@@ -171,45 +267,68 @@ export default function FlashcardArea({ level, list }: Props) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ isFavorite: newFavoriteState }),
         }
-      );
+      )
 
       if (!response.ok) {
-        throw new Error('Failed to update favorite status');
+        throw new Error('Failed to update favorite status')
       }
 
-      // 3. 強制的な再検証
-      await mutate(undefined, { revalidate: true });
-      
-      // 4. 状態の強制更新（インデックスを維持）
-      setCards(prev => {
-        const newCards = prev.map(card => 
-          card.id === wordId 
-            ? { ...card, isFavorite: newFavoriteState }
-            : card
-        );
-        // 現在の単語の位置を維持
-        const currentCard = newCards[currentIndex];
-        if (currentCard) {
-          setIndex(currentIndex);
-        }
-        return newCards;
-      });
+      // 3. mutate後のcards配列で、refの値を使って状態を復元
+      const responseJson = await response.json();
+      let updatedWords: Flashcard[] = responseJson.words ?? state.cards;
+      // UI上の順序（state.cards）にIDで並び替え
+      const prevOrder = state.cards.map(card => card.id);
+      updatedWords = prevOrder
+        .map(id => updatedWords.find((w: Flashcard) => w.id === id))
+        .filter((w): w is Flashcard => !!w);
+      const currentCardId = currentCardIdRef.current
+      const isShuffled = isShuffledRef.current
+      const shuffledIndices = shuffledIndicesRef.current
+      if (isShuffled && shuffledIndices.length > 0) {
+        const safeShuffledCards = shuffledIndices
+          .map(i => updatedWords[i])
+          .filter((card: Flashcard | undefined): card is Flashcard => card !== undefined)
+        const newIndex = safeShuffledCards.findIndex((card: Flashcard) => card?.id === currentCardId)
+        dispatch({
+          type: 'SET_CARDS',
+          cards: safeShuffledCards,
+          currentIndex: newIndex >= 0 ? newIndex : 0,
+          isShuffled: true,
+          shuffledIndices: shuffledIndices,
+        })
+      } else {
+        const newIndex = updatedWords.findIndex((card: Flashcard) => card?.id === currentCardId)
+        dispatch({
+          type: 'SET_CARDS',
+          cards: updatedWords,
+          currentIndex: newIndex >= 0 ? newIndex : 0,
+          isShuffled: false,
+          shuffledIndices: [],
+        })
+      }
     } catch (e) {
-      console.error("お気に入り更新失敗:", e);
-      alert("お気に入りの更新に失敗しました");
-      // エラー時は元の状態に戻す
-      mutate();
+      console.error("お気に入り更新失敗:", e)
+      alert("お気に入りの更新に失敗しました")
+      mutate()
+    } finally {
+      dispatch({ type: 'SET_UPDATING', isUpdating: false })
     }
-  };
+  }
 
   /* ------------ ナビゲーション ------------ */
-  const next = () => { setDir("next"); setIndex(i => (i + 1) % filteredCards.length) }
-  const prev = () => { setDir("prev"); setIndex(i => (i - 1 + filteredCards.length) % filteredCards.length) }
+  const next = () => { 
+    setDir("next")
+    dispatch({ type: 'SET_INDEX', index: (state.currentIndex + 1) % filteredCards.length })
+  }
+  
+  const prev = () => { 
+    setDir("prev")
+    dispatch({ type: 'SET_INDEX', index: (state.currentIndex - 1 + filteredCards.length) % filteredCards.length })
+  }
+  
   const shuffle = () => {
-    setIndex(0);
-    setCards((prev) => [...prev].sort(() => Math.random() - 0.5));
-  };
-
+    dispatch({ type: 'SHUFFLE' })
+  }
 
   /* ------------ 検索ハンドラ（debounce） ------------ */
   // 依存を空にすることで関数は 1 度だけ生成
@@ -218,8 +337,24 @@ export default function FlashcardArea({ level, list }: Props) {
     []
   )
 
+  const handleResetOrder = () => {
+    // 現在表示中のカードIDを取得
+    const currentCardId = state.cards[state.currentIndex]?.id;
+    // 元の順序に戻した配列を作成
+    const resetCards = state.originalOrder.map(i => state.cards[i]);
+    // 新しい配列でのインデックスを再計算
+    const newIndex = resetCards.findIndex((card: Flashcard) => card?.id === currentCardId);
+    dispatch({
+      type: 'SET_CARDS',
+      cards: resetCards,
+      currentIndex: newIndex >= 0 ? newIndex : 0,
+      isShuffled: false,
+      shuffledIndices: [],
+    });
+  }
+
   /* ------------ JSX ------------ */
-  const selectedCard = filteredCards[index] ?? null
+  const selectedCard = filteredCards[state.currentIndex] ?? null
   const variants = {
     enter :(d:"next"|"prev") => ({ opacity:0, x:d==="next"? 100:-100 }),
     center:                   { opacity:1, x:0 },
@@ -238,7 +373,7 @@ export default function FlashcardArea({ level, list }: Props) {
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => setOpenShuffle(true)}>シャッフル</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setIndex(0)}>元の順番</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleResetOrder}>元の順番</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

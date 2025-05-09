@@ -15,12 +15,12 @@ export async function PATCH(
   const { isFavorite } = await request.json();
   if (typeof isFavorite !== "boolean") {
     return NextResponse.json(
-      { error: "isFavorite must be a boolean" },
-      { status: 400 }
+      { error: "isFavorite must be boolean" },
+      { status: 422 }
     );
   }
 
-  const doc = adminDb
+  const wordRef = adminDb
     .collection("users")
     .doc(userId)
     .collection("folders")
@@ -28,6 +28,16 @@ export async function PATCH(
     .collection("words")
     .doc(wordId);
 
-  await doc.update({ isFavorite });
-  return NextResponse.json({ success: true });
+  await wordRef.update({ isFavorite });
+
+  const wordsSnap = await adminDb
+    .collection("users")
+    .doc(userId)
+    .collection("folders")
+    .doc(folderName)
+    .collection("words")
+    .get();
+  const words = wordsSnap.docs.map(doc => doc.data());
+
+  return NextResponse.json({ words }, { status: 200 });
 }
