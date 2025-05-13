@@ -342,3 +342,21 @@ folderAction.tsで使っている？　クライアント
 - お気に入り更新APIのレスポンスで「更新後の全単語リスト」を返し、そのままUIに反映する方式を試す。
 - SWRのキャッシュ設定（fallbackData, dedupingInterval等）も一時的に外し、キャッシュの影響を排除する。
 - cursorルール（dev-rules/nextjs, global, techstack.mdc, db-blueprint等）を厳守し、API設計・型安全・バリデーション・認証も徹底する。
+
+
+UI調整
+
+最初にどう操作すればいいか⼀⽬でわかる”4ステップ
+ステップ	仕組み	実装イメージ
+① 空状態 (Empty State) でガイド	単語が 0 件のときだけ、カード領域に
+イラスト＋説明＋CTA を表示	
+%0Aまだ単語がありません
+右下の ＋ ボタンをタップして
+最初の単語を登録しよう！
+② FAB にワンショット・ラベル	初回セッションのみ、FAB のすぐ横に
+“単語を追加”バッジを 1 回だけ 表示し、数秒でフェード	js\nuseEffect(() => {\n if (!localStorage.getItem('sawFabHint')) {\n setShowHint(true);\n setTimeout(() => setShowHint(false), 4000);\n localStorage.setItem('sawFabHint', 'true');\n }\n}, []);\n
+③ 軽いアニメーションで注目	FAB に 2〜3 回だけ pulse エフェクト
+（scale 1→1.15→1）を CSS keyframes で	css\n@keyframes pulse {\n 0% { transform:scale(1); box-shadow:0 0 0 0 rgba(34,197,94,.5); }\n 70%{ transform:scale(1.15); box-shadow:0 0 0 12px rgba(34,197,94,0); }\n 100%{ transform:scale(1); }\n}\n.fab-hint { animation:pulse 2s ease-out 2; }\n
+④ モバイルでは下部シート	スマホで FAB を押したら
+フルスクリーンではなく Bottom Sheet で入力フォーム	- shadcn/ui の Sheet コンポーネント
+- タップ後にキーボードが被らない

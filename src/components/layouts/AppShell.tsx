@@ -28,7 +28,16 @@ export default function AppShell({ children }: AppShellProps) {
         }}
       />
       <main className="flex-1 p-6">
-        <FlashcardArea level={level} list={list} />
+        <FlashcardArea 
+          level={level} 
+          list={list} 
+          onSelectLevel={handleSelectLevel}
+          onSelectList={(name) => {
+            setLevel(null)
+            setList(name)
+            console.log("マイ単語帳を開いた:", name)
+          }}
+        />
       </main>
     </div>
   )
