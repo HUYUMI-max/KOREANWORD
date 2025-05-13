@@ -17,6 +17,7 @@ import {
 interface SidebarProps {
   onSelectLevel: (level: "初心者" | "中級" | "上級") => void
   onSelectList: (name: string) => void
+  mobile?: boolean
 }
 
 type Folder = {
@@ -28,7 +29,7 @@ type Folder = {
 const fetcher: (url: string) => Promise<Folder[]> = (url) =>
   fetch(url).then((res) => res.json())
 
-export default function Sidebar({ onSelectLevel, onSelectList }: SidebarProps) {
+export default function Sidebar({ onSelectLevel, onSelectList, mobile = false }: SidebarProps) {
   const { userId } = useAuth()
 
   const swrKey = userId ? "/api/folders" : null;
@@ -62,10 +63,10 @@ export default function Sidebar({ onSelectLevel, onSelectList }: SidebarProps) {
   }
   
   return (
-    <div className="hidden md:block w-60 border-r bg-background/80">
+    <div className={`${mobile ? '' : 'hidden md:block'} w-60 border-r bg-background/80`}>
       {/* 上部：新規ボタン */}
       <div className="p-4 flex justify-between items-center">
-        <h2 className="text-lg font-semibold">単語帳</h2>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">単語帳</h2>
         <Button size="icon" variant="outline" onClick={() => setDialogOpen(true)}>
           <Plus className="w-4 h-4" />
         </Button>
@@ -73,12 +74,12 @@ export default function Sidebar({ onSelectLevel, onSelectList }: SidebarProps) {
 
       {/* レベル別プリセット */}
       <div className="px-4">
-        <h3 className="mb-2 text-sm font-semibold">レベル別単語帳</h3>
+        <h3 className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">レベル別単語帳</h3>
         {["初心者", "中級", "上級"].map((lv) => (
           <Button
             key={lv}
             variant="ghost"
-            className="w-full justify-start"
+            className="w-full justify-start text-gray-700 dark:text-gray-200"
             onClick={() => onSelectLevel(lv as "初心者" | "中級" | "上級")}
           >
             <FolderOpen className="mr-2 h-4 w-4" />
@@ -89,7 +90,7 @@ export default function Sidebar({ onSelectLevel, onSelectList }: SidebarProps) {
 
       {/* マイ単語帳一覧 */}
       <div className="px-4 mt-4">
-        <h3 className="mb-2 text-sm font-semibold">マイ単語帳</h3>
+        <h3 className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">マイ単語帳</h3>
       </div>
 
       <ScrollArea className="px-4 h-[calc(100vh-220px)] pb-6">
@@ -107,7 +108,7 @@ export default function Sidebar({ onSelectLevel, onSelectList }: SidebarProps) {
             >
               <Button
                 variant="ghost"
-                className="flex-1 justify-start"
+                className="flex-1 justify-start text-gray-700 dark:text-gray-200"
                 onClick={() => onSelectList(folder.name)}
               >
                 <FolderOpen className="mr-2 h-4 w-4" />
