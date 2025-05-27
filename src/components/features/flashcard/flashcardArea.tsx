@@ -406,7 +406,6 @@ export default function FlashcardArea({ level, list, onSelectLevel, onSelectList
           </div>
         </Dialog.DialogContent>
       </Dialog.Dialog>
-
       <SearchBar onSearch={handleSearch} />
 
       {/* --- シャッフルボタン（主操作） --- */}
